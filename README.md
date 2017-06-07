@@ -5,10 +5,7 @@ GEC:overciew
 Basic idea:
 this is a group expense consolidation app. it is going to change how groups of people pay for expenses that involve more than 1 or 2 people. It makes it easy and stream line into a handful of clicks.
 
-with this app, you can connect your paypal account and use their simple and easy system to add funds and receive fund in order to wire them back into your bank account.
-
-Features:
-create your profile \n
+with this app, you can connect your paypal account and use their simple and easy system to add funds and rn
     add basic info \n
     add profile image \n
     import / find friends \n
