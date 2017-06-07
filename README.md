@@ -5,11 +5,11 @@ GEC:overciew
 Basic idea:
 this is a group expense consolidation app. it is going to change how groups of people pay for expenses that involve more than 1 or 2 people. It makes it easy and stream line into a handful of clicks.
 
-<<<<<<< HEAD
 with this app, you can connect your paypal account and use their simple and easy system to add funds
 and receive fund in order to wire them back into your bank account.
 
 Features:
+
 create your profile
     add basic info
     add profile image
@@ -57,55 +57,53 @@ splitting expense
         take photo or receipt
         enter manual amounts
         highlights single amount and tag user associated
-=======
 with this app, you can connect your paypal account and use their simple and easy system to add funds and rn
-    add basic info \n
-    add profile image \n
-    import / find friends \n
-link specific accounts \n
-    paypal \n
-    venmo \n
-    google \n
-    facebook \n
-create group \n
-    add group info \n
-    add members \n
-    designate hosts \n
-    add a record \n
-    verify records \n
-    view group balance within group \n
-    adjust specific settings \n
-add records \n
-    create a group record \n
-    add group info \n
-    add expense amount and description \n
-    select members of group involved in expense \n
-    split expense evenly or by person \n
-friendships \n
-    find your friends \n
-        username \n
-        email \n
-        name \n
-    add them to your list \n
-    block people \n
-    decline request \n
-    unfollow \n
-Activity \n
-    see all the different actions that are going on in each of your groups \n
-    keep updated \n
-    verify account expenses \n
-    track all your group expenses \n
-    track your overall balance \n
-splitting expense \n
-    evenly \n
-        select the members \n
-        send notification to all involved members \n
-    individually \n
-        select the members \n
-        take photo or receipt \n
-        enter manual amounts \n
-        highlights single amount and tag user associated \n
->>>>>>> 1a6d52917ea6b37cfac2b4f650bd35f7dff94038
+    add basic info
+    add profile image
+    import / find friends
+link specific accounts
+    paypal
+    venmo
+    google
+    facebook
+create group
+    add group info
+    add members
+    designate hosts
+    add a record
+    verify records
+    view group balance within group
+    adjust specific settings
+add records
+    create a group record
+    add group info
+    add expense amount and description
+    select members of group involved in expense
+    split expense evenly or by person
+friendships
+    find your friends
+        username
+        email
+        name
+    add them to your list
+    block people
+    decline request
+    unfollow
+Activity
+    see all the different actions that are going on in each of your groups
+    keep updated
+    verify account expenses
+    track all your group expenses
+    track your overall balance
+splitting expense
+    evenly
+        select the members
+        send notification to all involved members
+    individually
+        select the members
+        take photo or receipt
+        enter manual amounts
+        highlights single amount and tag user associated
 
 App Run Through:
 
