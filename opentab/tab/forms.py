@@ -3,13 +3,15 @@
 # that i think need to be created are the following...
 from django import forms
 
+
 class CreateGroupForm(forms.Form):
     name = forms.CharField(max_length=25)
     description = forms.CharField(max_length=200)
-    image = fomrs.ImageField()
+    image = forms.ImageField()
     member_count = forms.IntegerField()
+
 
 class CreateRecordForm(forms.Form):
     amount = forms.FloatField()
-    description = fomrs.CharField(max_length = 200)
+    description = forms.CharField(max_length=200)
     type = forms.IntegerField()
