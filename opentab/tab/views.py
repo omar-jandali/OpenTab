@@ -26,6 +26,7 @@ def signup(request):
             messages.add_message(request, messages.SUCCESS, 'Account Created!')
             return redirect('login')
         else:
+            print('form is not valid')
             params = {}
             params['form'] = form
             return render(request, 'tab/signup.html', params)

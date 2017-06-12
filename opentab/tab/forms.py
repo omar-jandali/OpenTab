@@ -58,7 +58,7 @@ class SignupForm(forms.Form):
     password = forms.CharField(label='Password',
                                max_length=50,
                                validators=[pass_val])
-    password2 = forms.CharField(label='Verify Password', max_length=50)
+    verify = forms.CharField(label='Verify Password', max_length=50)
     email = forms.EmailField(label='Email',
                              max_length=50,
                              validators=[unique_email])
