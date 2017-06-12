@@ -1,7 +1,10 @@
 from django.shortcuts import render, redirect
+from django.http import HttpResponse
 from django.contrib import messages
-from .forms import SignupForm
+from .forms import SignupForm, LoginForm
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required, user_passes_test
 
 
 def signup(request):
@@ -35,16 +38,37 @@ def signup(request):
 def login_page(request):
     if request.method == 'GET':
         return render(request, 'tab/login.html')
-    # else:
-    #     form = LoginForm(request.POST)
-    #     if form.is_valid():
-    #         username = request.POST['username']
-    #         password = request.POST['password']
-    #         user = authenticate(request, username=username, password=password)
-    #         if user:
-    #             login(request, user)
-    #             return redirect('profile')
-    #     print('no user')
-    #     context = {}
-    #     context['error'] = 'Username or password is incorrect'
-    #     return somewhere
+    else:
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password']
+            if '@' in username:
+                u = User.objects.filter(email=username).first()
+                if u:
+                    user = authenticate(request, username=u.username, password=password)
+                else:
+                    user = None
+            else:
+                user = authenticate(request, username=username, password=password)
+            if user:
+                login(request, user)
+                return redirect('logged_in')
+        print('no user')
+        context = {}
+        context['error'] = 'Username or password is incorrect'
+        return render(request, 'tab/login.html', context)
+
+
+@login_required
+def logout_page(request):
+    logout(request)
+    return redirect('login')
+
+
+@login_required
+def logged_in(request):
+    print('user is logged in')
+    s = "<h1>Logged in as {} {}</h1>".format(request.user.first_name, request.user.last_name)
+    s += "<br><a href='http://127.0.0.1:8000/logout'>logout</a>"
+    return HttpResponse(s)
