@@ -16,7 +16,7 @@ class Friend(models.Model):
         ('0', 'default'),
         ('1', 'blocked'),
     )
-    type = models.CharField(max_length=1, choices=TYPE_CHOICES, default='0')  # server
+    types = models.CharField(max_length=1, choices=TYPE_CHOICES, default='0')  # server
     created = models.DateTimeField(auto_now_add=True)  # server
 
 
@@ -35,7 +35,7 @@ class Group(models.Model):
         ('3', 'gold'),
         ('4', 'platnium'),
     )
-    type = models.CharField(max_length=1, choices=TYPE_CHOICES, default='0')  # user
+    types = models.CharField(max_length=1, choices=TYPE_CHOICES, default='0')  # user
     # 0 = basic[1 - 5 people]
     # 1 = bronze[5 - 7 people]
     # 2 = silver[8 - 10 people]
@@ -54,7 +54,7 @@ class Member(models.Model):
         ('0', 'member'),
         ('1', 'host'),
     )
-    type = models.CharField(max_length=1, choices=TYPE_CHOICES)  # user
+    types = models.CharField(max_length=1, choices=TYPE_CHOICES)  # user
     created = models.DateTimeField(auto_now_add=True)  # server
 
 
@@ -91,7 +91,7 @@ class Notification(models.Model):
         ('2', 'request'),
         ('3', 'friend'),
     )
-    type = models.CharField(max_length=1, choices=TYPE_CHOICES)  # server
+    types = models.CharField(max_length=1, choices=TYPE_CHOICES)  # server
     created = models.DateTimeField(auto_now_add=True)  # server
 
 
