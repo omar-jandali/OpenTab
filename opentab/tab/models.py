@@ -4,8 +4,8 @@ from django.contrib.auth.models import User
 
 
 class Friend(models.Model):
-    user1 = models.ForeignKey(User, on_delete=models.CASCADE)  # server
-    user2 = models.ForeignKey(User, on_delete=models.CASCADE)  # server
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="friendship_creator_set")  # server
+    friend = models.ForeignKey(User, related_name="friend_set")  # server
     STATUS_CHOICES = (
         ('0', 'friend'),
         ('1', 'family'),
@@ -41,7 +41,7 @@ class Group(models.Model):
     # 2 = silver[8 - 10 people]
     # 3 = gold[11 - 13 people]
     # 4 = platnium[14+]
-    balance = models.DecimalField(decimal_places=2, default=0)  # server
+    balance = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # server
     member_count = models.SmallIntegerField()  # user
     created_by = models.ForeignKey(User)  # server
     created = models.DateTimeField(auto_now_add=True)  # server
@@ -59,21 +59,21 @@ class Member(models.Model):
 
 
 class Request(models.Model):
-    user1 = models.ForeignKey(User)  # server
-    user2 = models.ForeignKey(User)  # user
+    user1 = models.ForeignKey(User, related_name='request_user1_set')  # server
+    user2 = models.ForeignKey(User, related_name='request_user2_set')  # user
     created = models.DateTimeField(auto_now_add=True)  # server
 
 
 class Activity(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # server
     group = models.ForeignKey(Group, on_delete=models.CASCADE)  # server
-    description = models.models.CharField(max_length=200)  # server
+    description = models.CharField(max_length=200)  # server
     created = models.DateTimeField(auto_now_add=True)  # server
 
 
 class Record(models.Model):
-    amount = models.DecimalField(decimal_places=2)  # user
-    description = models.models.CharField(max_length=200)  # user
+    amount = models.DecimalField(max_digits=5, decimal_places=2)  # user
+    description = models.CharField(max_length=200)  # user
     verified = models.BooleanField()  # server
     even_split = models.BooleanField()  # user
     group = models.ForeignKey(Group, on_delete=models.CASCADE)  # server
@@ -83,7 +83,7 @@ class Record(models.Model):
 
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # server
-    description = models.models.CharField(max_length=200)  # server
+    description = models.CharField(max_length=200)  # server
     seen = models.BooleanField()  # server
     TYPE_CHOICES = (
         ('0', 'group'),
