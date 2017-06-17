@@ -4,3 +4,6 @@
 
 *.sqlite3
 
+opentab/tab/__pycache__
+
+opentab/opentab/__pycache__
