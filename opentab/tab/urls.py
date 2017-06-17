@@ -6,4 +6,5 @@ urlpatterns = [
     url(r'^signup$', views.signup, name='signup'),
     url(r'^loggedin$', views.logged_in, name='logged_in'),
     url(r'^logout$', views.logout_page, name='logout_page'),
+    url(r'^confirm_email/(?P<token>.*)/$', views.confirm_email, name='confirm_email'),
 ]

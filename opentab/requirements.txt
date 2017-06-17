@@ -11,4 +11,6 @@ sqlite==3.13.0
 tk==8.5.18
 wheel==0.29.0
 xz==5.2.2
-zlib==1.2.8              
+zlib==1.2.8
+requests==2.18.1
+itsdangerous==0.24            

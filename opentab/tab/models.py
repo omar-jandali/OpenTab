@@ -97,10 +97,11 @@ class Notification(models.Model):
 
 class Profile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # server
-    pic = models.ImageField()  # Update with options
-    city = models.CharField(max_length=45)  # user
-    state = models.CharField(max_length=45)  # user
-    phone = models.BigIntegerField()  # user
-    dob = models.DateField()  # user
-    public = models.BooleanField()  # user
+    confirmed_email = models.BooleanField(default=False)
+    pic = models.ImageField(null=True, blank=True)  # Update with options
+    city = models.CharField(max_length=45, null=True, blank=True)  # user
+    state = models.CharField(max_length=45, null=True, blank=True)  # user
+    phone = models.BigIntegerField(null=True, blank=True)  # user
+    dob = models.DateField(null=True, blank=True)  # user
+    public = models.BooleanField(default=False)  # user
     created = models.DateTimeField(auto_now_add=True)  # server
