@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Create a group</h1>
+  {% if message %}
+    <p>{{message}}</p>
+  {% endif %}
+  <form action="." method="POST">
+    {% csrf_token %}
+    {% if count == bronze %}
+      {{ form1.as_p }}
+    {% endif %}
+    {% if count == silver %}
+      {{ form2.as_p }}
+    {% endif %}
+    {% if count == gold %}
+      {{ form3.as_p }}
+    {% endif %}
+    {% if count == platnium %}
+      {{ form4.as_p }}
+    {% endif %}
+    <input type="submit" name="submit" value="submit">
+  </form>
+{% endblock %}

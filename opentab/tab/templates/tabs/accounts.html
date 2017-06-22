@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <p>testing page</p>
+
+  {% for group in groups %}
+    <p>{{ group.id }}, {{ group.name }}, {{ group.description }}, {{ group.count }},
+      {{ group.status }}, {{ group.reference_code }}, {{ group.created_by }}, {{ group.created }}</p>
+  {% endfor %}
+  {% for member in members %}
+    <p> {{ member.id }} {{ member.user }}, {{ member.group_reference }}, {{ member.status }},
+      {{ member.created }} </p>
+  {% endfor %}
+{% endblock %}
