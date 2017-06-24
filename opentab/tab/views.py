@@ -11,6 +11,31 @@ from .forms import CreateGroupForm, AddMembersForm
 # are in the database
 # filters can be added later
 
+def userHome(request, name):
+    currentUser = User.objects.get(username=name)
+    members = Member.objects.filter(user=currentUser).all()
+    groups = Group.objects.all()
+    parameters = {
+        'currentUser':currentUser,
+        'members':members,
+        'groups':groups
+    }
+    return render(request, 'tabs/user_home.html', parameters)
+
+def groupHome(request, groupName):
+    currentUser = User.objects.get(username='hanijandali')
+    userGroups = Member.objects.filter(user=currentUser).all()
+    members = Member.objects.all()
+    groups = Group.objects.filter(name=groupName).all()
+    parameters = {
+        'userGroups':userGroups,
+        'groups':groups,
+        'groupName':groupName,
+        'members':members,
+    }
+    return render(request, 'tabs/group_home.html', parameters)
+
+
 def groups(request):
     # following is all of th actions that are taken after the form is submitted
     if request.method == 'POST':
@@ -45,17 +70,6 @@ def groups(request):
         "message" : message,
     }
     return render(request, 'tabs/create_group.html', parameters)
-
-def userHome(request, name):
-    currentUser = User.objects.get(username=name)
-    members = Member.objects.filter(user=currentUser).all()
-    groups = Group.objects.all()
-    parameters = {
-        'currentUser':currentUser,
-        'members':members,
-        'groups':groups
-    }
-    return render(request, 'tabs/user_home.html', parameters)
 
 def addMembers(request, groupName):
     currentUser = User.objects.get(username='hanijandali')

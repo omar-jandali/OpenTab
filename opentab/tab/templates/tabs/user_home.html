@@ -6,7 +6,7 @@
     {% for member in members %}
       {% for group in groups %}
         {% if group.reference_code == member.group_reference %}
-          <li>{{ group.name }}</li>
+          <li><a href="">{{ group.name }}</a></li>
         {% endif %}
       {% endfor %}
     {% endfor %}

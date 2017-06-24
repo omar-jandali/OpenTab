@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>{{ groupName }}</h2>
+  {% for userGroup in userGroups %}
+    {% for group in groups %}
+      {% if userGroup.group_reference == group.reference_code %}
+        {% for member in members %}
+          {% if member.group_reference == userGroup.group_reference %}
+            <p>{{ member.user }}</p>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% endblock %}
