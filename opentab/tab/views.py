@@ -46,6 +46,17 @@ def groups(request):
     }
     return render(request, 'tabs/create_group.html', parameters)
 
+def userHome(request, name):
+    currentUser = User.objects.get(username=name)
+    members = Member.objects.filter(user=currentUser).all()
+    groups = Group.objects.all()
+    parameters = {
+        'currentUser':currentUser,
+        'members':members,
+        'groups':groups
+    }
+    return render(request, 'tabs/user_home.html', parameters)
+
 def addMembers(request, groupName):
     currentUser = User.objects.get(username='hanijandali')
     currentGroup = Group.objects.filter(created_by=currentUser).get(name=groupName)
@@ -69,6 +80,7 @@ def addMembers(request, groupName):
             'currentGroup':currentGroup,
         }
     return render(request, 'tabs/add_members.html', params)
+
 
 def accounts(request):
     groups = Group.objects.all()
