@@ -1,10 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db import transaction
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
 
 from random import randint
 
 from .models import Group, User, Member
-from .forms import CreateGroupForm
+from .forms import CreateGroupForm, AddMembersForm
 
 # the following def is going to be what grabs all of the different groups that
 # are in the database
@@ -31,16 +32,12 @@ def groups(request):
                 group_reference = referenceCode,
                 status = 1,
             )
-            # new_member.user = groupDefaultCreatedBy
-            # new_member.group_reference = referenceCode
-            # new_member.status = 1
-            # new_member.save()
-            return redirect('/tab/accounts')
-
+            #return redirect('/tab/addMembers')
+            return HttpResponseRedirect(reverse('add_members', args=[groupName]))
     else:
         # the following is the storing of the forms
         createGroup = CreateGroupForm()
-        message = ''
+        message = 'enter group info below'
     # the following are all the objects that are going to be passed to the
     # rendering remplate
     parameters = {
@@ -49,9 +46,29 @@ def groups(request):
     }
     return render(request, 'tabs/create_group.html', parameters)
 
-def addMembers(request):
-
-    return render(request, 'tabs/accounts', params)
+def addMembers(request, groupName):
+    currentUser = User.objects.get(username='hanijandali')
+    currentGroup = Group.objects.filter(created_by=currentUser).get(name=groupName)
+    if request.method == "POST":
+        form = AddMembersForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            user = cd['user']
+            new_member = Member.objects.create(
+                user = user,
+                group_reference = currentGroup.reference_code,
+                status = 1,
+            )
+            return redirect('/tab/accounts')
+    else:
+        addMembers = AddMembersForm()
+        message = 'add members below'
+        params = {
+            'addMembers':addMembers,
+            'message':message,
+            'currentGroup':currentGroup,
+        }
+    return render(request, 'tabs/add_members.html', params)
 
 def accounts(request):
     groups = Group.objects.all()
