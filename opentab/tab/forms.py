@@ -3,12 +3,10 @@
 # that i think need to be created are the following...
 from django import forms
 from django.forms import ModelForm
-from tab.models import Group, Member
+from tab.models import Group, Member, Record
 
-member_count_choices = (('bronze', '1-4',),
-                        ('silver', '5-7',),
-                        ('gold', '8-10',),
-                        ('platnium', '11+',))
+split_bill_choices = (('1', 'even',),
+                      ('2', 'individual',))
 
 class CreateGroupForm(forms.ModelForm):
     class Meta:
@@ -19,5 +17,13 @@ class AddMembersForm(forms.ModelForm):
     class Meta:
         model = Member
         fields = ['user']
-# class AddMembersForm(forms.ModelForm):
-#     class Meta:
+
+class AddRecordForm(forms.ModelForm):
+    split_choices = (('1', 'even'),
+                     ('2', 'individual'))
+    split = forms.TypedChoiceField(
+        choices=split_choices, widget=forms.RadioSelect, coerce=int
+    )
+    class Meta:
+        model = Record
+        fields = ['amount', 'description', 'split']

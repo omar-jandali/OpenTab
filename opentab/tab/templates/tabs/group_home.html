@@ -8,6 +8,12 @@
         {% for member in members %}
           {% if member.group_reference == userGroup.group_reference %}
             <p>{{ member.user }}</p>
+            {% if member.status = 1 %}
+              <p>member</p>
+            {% endif %}
+            {% if member.status = 2 %}
+              <p>host</p>
+            {% endif %}
           {% endif %}
         {% endfor %}
       {% endif %}

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <p>testing page</p>
+  <p>{{message}}</p>
 
   {% for group in groups %}
     <p>{{ group.id }}, {{ group.name }}, {{ group.description }}, {{ group.count }},
@@ -15,4 +15,7 @@
     <p> {{record.id}} {{record.amount}}, {{record.description}}, {{record.status}}, {{record.split}},
       {{record.group_reference}}, {{record.user}}, {{record.created}}  </p>
   {% endfor %}
+  <form action="." method="POST">
+    <input type="submit", name="submit" value="delete">
+  </form>
 {% endblock %}

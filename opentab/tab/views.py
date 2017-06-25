@@ -4,8 +4,8 @@ from django.http import HttpResponseRedirect
 
 from random import randint
 
-from .models import Group, User, Member
-from .forms import CreateGroupForm, AddMembersForm
+from .models import Group, User, Member, Record
+from .forms import CreateGroupForm, AddMembersForm, AddRecordForm
 
 # the following def is going to be what grabs all of the different groups that
 # are in the database
@@ -73,7 +73,7 @@ def groups(request):
 
 def addMembers(request, groupName):
     currentUser = User.objects.get(username='hanijandali')
-    currentGroup = Group.objects.filter(created_by=currentUser).get(name=groupName)
+    currentGroup = Group.objects.get(name=groupName)
     if request.method == "POST":
         form = AddMembersForm(request.POST)
         if form.is_valid():
@@ -95,16 +95,66 @@ def addMembers(request, groupName):
         }
     return render(request, 'tabs/add_members.html', params)
 
+def addRecord(request, groupName):
+    currentUser = User.objects.get(username='hanijandali')
+    currentGroup = Group.objects.get(name=groupName)
+    if request.method == 'POST':
+        form = AddRecordForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            amount = cd['amount']
+            description = cd['description']
+            split = cd['split']
+            new_record = Record.objects.create(
+                amount = amount,
+                description = description,
+                status = 1,
+                split = split,
+                group_reference = currentGroup.reference_code,
+                user = currentUser,
+            )
+            return redirect('/tab/accounts')
+    else:
+        form = AddRecordForm()
+        message = 'fill out the form to add a record'
+        parameters = {
+            'currentGroup':currentGroup,
+            'form':form,
+            'message':message,
+            'groupName':groupName
+        }
+    return render(request, 'tabs/add_record.html', parameters)
 
 def accounts(request):
     groups = Group.objects.all()
     members = Member.objects.all()
+    records = Record.objects.all()
     params = {
         'groups':groups,
         'members':members,
+        'records':records,
     }
     return render(request, 'tabs/accounts.html', params)
     # return render(request, 'tabs/addMembers.html', params)
+
+def accountsDelete(request):
+    groups = Group.objects.all()
+    members = Member.objects.all()
+    records = Record.objects.all()
+    if request.method == 'POST':
+        deleteGroups = groups.delete()
+        deleteMembers = members.delete()
+        deleteRecords = records.delete()
+        return redirect('/tab/accounts')
+    else:
+        message = 'delete all of the following records'
+        params = {
+            'groups':groups,
+            'members':members,
+            'records':records,
+            'message':message,
+        }
+        return render(request, 'tabs/delete_accounts.html', params)
 
 def generateReferenceNumber():
     reference = randint(1, 2147483646)

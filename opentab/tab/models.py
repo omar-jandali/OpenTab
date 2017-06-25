@@ -29,17 +29,17 @@ class Member(models.Model):
     created = models.DateTimeField(auto_now_add=True) #server
 
 class Record(models.Model):
-    amount = models.DecimalField(decimal_places=2, max_digits=2) #user
-    description = models.CharField(max_length=200) #user
-    status = models.SmallIntegerField() #server
+    amount = models.DecimalField(decimal_places=2, max_digits=9, default=0.00) #user
+    description = models.CharField(max_length=250) #user
+    status = models.SmallIntegerField(default=1) #server
     # 1 = unverified
     # 2 = verified
-    split = models.SmallIntegerField() #user
+    split = models.SmallIntegerField(default=1) #user
     # added a type for the Record which will determine if the bill is an
     # even split between everyone selected or indiviual amounts
     # 1 = even split
     # 2 = individual split
-    group = models.ForeignKey(Group, on_delete=models.CASCADE) #server
+    group_reference = models.IntegerField(default=0) #server
     user = models.ForeignKey(User, on_delete=models.CASCADE) #server
     created = models.DateTimeField(auto_now_add=True) #server
 
