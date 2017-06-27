@@ -41,24 +41,24 @@ def groups(request):
     if request.method == 'POST':
         form = CreateGroupForm(request.POST)
         referenceCode = generateReferenceNumber()
+        user = User.objects.get(username='omar')
         if form.is_valid():
             cd = form.cleaned_data
             groupName = cd['name']
             groupDescription = cd['description']
-            groupDefaultCreatedBy = User.objects.get(username='hanijandali')
             new_group = form.save(commit=False)
             new_group.name = groupName
             new_group.description = groupDescription
             new_group.reference_code = referenceCode
-            new_group.created_by = groupDefaultCreatedBy
+            new_group.created_by = user.username
             new_group.save()
             new_member = Member.objects.create(
-                user = groupDefaultCreatedBy,
-                group_reference = referenceCode,
+                user = user,
+                group = new_group,
                 status = 1,
             )
-            #return redirect('/tab/addMembers')
-            return HttpResponseRedirect(reverse('add_members', args=[groupName]))
+            return redirect('/tab/accounts')
+            #return redirect(reverse('add_members', args=[new_group.id]))
     else:
         # the following is the storing of the forms
         createGroup = CreateGroupForm()
@@ -71,27 +71,29 @@ def groups(request):
     }
     return render(request, 'tabs/create_group.html', parameters)
 
-def addMembers(request, groupName):
-    currentUser = User.objects.get(username='hanijandali')
-    currentGroup = Group.objects.get(name=groupName)
+def addMembers(request, groupId):
+    currentUser = User.objects.get(username='omar')
+    group = Group.objects.get(id=groupId)
     if request.method == "POST":
         form = AddMembersForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
             user = cd['user']
+            valid_user = User.objects.get(username=user)
             new_member = Member.objects.create(
                 user = user,
-                group_reference = currentGroup.reference_code,
+                group = group,
                 status = 1,
             )
             return redirect('/tab/accounts')
     else:
         addMembers = AddMembersForm()
+        users = User.objects.all()
         message = 'add members below'
         params = {
             'addMembers':addMembers,
             'message':message,
-            'currentGroup':currentGroup,
+            'group':group,
         }
     return render(request, 'tabs/add_members.html', params)
 
@@ -128,30 +130,24 @@ def addRecord(request, groupName):
 def accounts(request):
     groups = Group.objects.all()
     members = Member.objects.all()
-    records = Record.objects.all()
+    users = User.objects.all()
     params = {
         'groups':groups,
         'members':members,
-        'records':records,
+        'users':users,
     }
     return render(request, 'tabs/accounts.html', params)
     # return render(request, 'tabs/addMembers.html', params)
 
 def accountsDelete(request):
     groups = Group.objects.all()
-    members = Member.objects.all()
-    records = Record.objects.all()
     if request.method == 'POST':
-        deleteGroups = groups.delete()
-        deleteMembers = members.delete()
-        deleteRecords = records.delete()
+        Groups.objects.all().remove()
         return redirect('/tab/accounts')
     else:
         message = 'delete all of the following records'
         params = {
             'groups':groups,
-            'members':members,
-            'records':records,
             'message':message,
         }
         return render(request, 'tabs/delete_accounts.html', params)

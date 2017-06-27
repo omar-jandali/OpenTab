@@ -3,7 +3,7 @@ from . import views
 
 urlpatterns = [
     url(r'^createGroup/$', views.groups, name='create_group'),
-    url(r'^(?P<groupName>[\w+]+)/addMembers/$', views.addMembers,
+    url(r'^(?P<groupId>[0-9]+)/addMembers/$', views.addMembers,
         name='add_members'),
     url(r'^accounts/$', views.accounts, name='accounts'),
     url(r'^accounts/delete$', views.accountsDelete, name='delete_accounts'),

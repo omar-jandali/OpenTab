@@ -8,11 +8,8 @@
       {{ group.status }}, {{ group.reference_code }}, {{ group.created_by }}, {{ group.created }}</p>
   {% endfor %}
   {% for member in members %}
-    <p> {{ member.id }} {{ member.user }}, {{ member.group_reference }}, {{ member.status }},
-      {{ member.created }} </p>
+    <p>{{ member.id }}, {{ member.user.username }}, {{ member.group.name }}, {{ member.status }},
+      {{ member.created }}</p>
   {% endfor %}
-  {% for record in records %}
-    <p> {{record.id}} {{record.amount}}, {{record.description}}, {{record.status}}, {{record.split}},
-      {{record.group_reference}}, {{record.user}}, {{record.created}}  </p>
-  {% endfor %}
+
 {% endblock %}

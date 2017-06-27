@@ -15,14 +15,14 @@ class Group(models.Model):
     # 3 suspended
     reference_code = models.IntegerField(default=0)
     # the following is going to be a code that is created by the server that will
-    # be used by all other parts of the application in order to keep track of each
+    # be used by all other parts of the appFication in order to keep track of each
     # group that is created. It will be unique for every different group.
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_by = models.CharField(max_length=25)
     created = models.DateTimeField(auto_now_add=True)
 
 class Member(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE) #user
-    group_reference = models.IntegerField(default=0) #server
+    user = models.ForeignKey(User, default=1, on_delete=models.CASCADE) #user
+    group = models.ForeignKey(Group, default=1 , on_delete=models.CASCADE) #user
     status = models.SmallIntegerField(default=1) #user
     # 1 = member
     # 2 = host
@@ -39,8 +39,8 @@ class Record(models.Model):
     # even split between everyone selected or indiviual amounts
     # 1 = even split
     # 2 = individual split
-    group_reference = models.IntegerField(default=0) #server
-    user = models.ForeignKey(User, on_delete=models.CASCADE) #server
+    #group_reference = models.IntegerField(default=0) #server
+    user = models.CharField(max_length=25) #server
     created = models.DateTimeField(auto_now_add=True) #server
 
 class Activity(models.Model):
