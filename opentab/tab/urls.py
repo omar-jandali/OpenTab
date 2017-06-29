@@ -9,6 +9,6 @@ urlpatterns = [
     name='add_record'),
     url(r'^accounts/$', views.accounts, name='accounts'),
     url(r'^accounts/delete$', views.accountsDelete, name='delete_accounts'),
-    url(r'^(?P<name>[\w+]+)/user/home/$', views.userHome, name='user_home'),
-    url(r'^(?P<groupName>[\w+]+)/group/home/$', views.groupHome, name='group_home'),
+    url(r'^(?P<name>[\w+]+)/homes/$', views.userHome, name='user_home'),
+    url(r'^(?P<groupId>[0-9]+)/home/$', views.groupHome, name='group_home'),
 ]

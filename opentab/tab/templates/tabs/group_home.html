@@ -1,22 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h2>{{ groupName }}</h2>
-  {% for userGroup in userGroups %}
-    {% for group in groups %}
-      {% if userGroup.group_reference == group.reference_code %}
-        {% for member in members %}
-          {% if member.group_reference == userGroup.group_reference %}
-            <p>{{ member.user }}</p>
-            {% if member.status = 1 %}
-              <p>member</p>
-            {% endif %}
-            {% if member.status = 2 %}
-              <p>host</p>
-            {% endif %}
-          {% endif %}
-        {% endfor %}
-      {% endif %}
-    {% endfor %}
+  <h2>{{ group.name }}</h2>
+
+  {% for member in members %}
+    {% if member.group.id == group.id %}
+      <p>{{ member.user.username }}</p>
+    {% endif %}
+  {% endfor %}
+  {% for record in records %}
+    {% if record.group.id == group.id %}
+      <p>{{ record.amount }}, {{ record.description }}</p>
+    {% endif %}
   {% endfor %}
 {% endblock %}
