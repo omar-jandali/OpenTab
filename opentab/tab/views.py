@@ -56,6 +56,8 @@ def groupHome(request, groupId):
 #
 #  will redirect to the adding memeber view (need to be fixed)
 def groups(request):
+    # the following is the user objectr of the person who is creating the group
+    user = User.objects.get(username='omar')
     # following is all of th actions that are taken after the form is submitted
     if request.method == 'POST':
         # the following few lines will get the submitted form and create a reference
@@ -63,20 +65,19 @@ def groups(request):
         # it will also assign the user that created the group
         form = CreateGroupForm(request.POST)
         referenceCode = generateReferenceNumber()
-        user = User.objects.get(username='omar')
         # the following validated the actual form to ensure that it was filled out
         # with the correct inforamtion
         if form.is_valid():
             cd = form.cleaned_data
-            groupName = cd['name']
-            groupDescription = cd['description']
+            name = cd['name']
+            description = cd['description']
             # the new_group creates an isntance of the new group and saved it into
             # the database once it is created.
             new_group = Group.objects.create(
-                name = groupName,
+                name = name,
                 description = description,
                 reference_code = referenceCode,
-                created_by = user.username
+                created_by = user,
             )
             # new_group = form.save(commit=False)
             # new_group.name = groupName

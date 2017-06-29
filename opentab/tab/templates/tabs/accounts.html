@@ -9,7 +9,7 @@
 
   {% for group in groups %}
     <p>ID:{{ group.id }}, NAME:{{ group.name }}, DESCRIPTION:{{ group.description }}, COUNT:{{ group.count }},
-      STATUS:{{ group.status }}, REFERENCE:{{ group.reference_code }}, CREATED BY:{{ group.created_by }},
+      STATUS:{{ group.status }}, REFERENCE:{{ group.reference_code }}, CREATED BY:{{ group.created_by.username }},
       CREATED:{{ group.created }}</p>
   {% endfor %}
 

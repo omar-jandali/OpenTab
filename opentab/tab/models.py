@@ -17,7 +17,7 @@ class Group(models.Model):
     # the following is going to be a code that is created by the server that will
     # be used by all other parts of the appFication in order to keep track of each
     # group that is created. It will be unique for every different group.
-    created_by = models.CharField(max_length=25)
+    created_by = models.ForeignKey(User, default=1, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
 
 class Member(models.Model):
