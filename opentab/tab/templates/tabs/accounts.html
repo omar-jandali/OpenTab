@@ -3,13 +3,25 @@
 {% block content %}
   <p>testing page</p>
 
-  {% for group in groups %}
-    <p>{{ group.id }}, {{ group.name }}, {{ group.description }}, {{ group.count }},
-      {{ group.status }}, {{ group.reference_code }}, {{ group.created_by }}, {{ group.created }}</p>
+  {% for user in users %}
+    <p>{{ user.username }}</p>
   {% endfor %}
+
+  {% for group in groups %}
+    <p>ID:{{ group.id }}, NAME:{{ group.name }}, DESCRIPTION:{{ group.description }}, COUNT:{{ group.count }},
+      STATUS:{{ group.status }}, REFERENCE:{{ group.reference_code }}, CREATED BY:{{ group.created_by }},
+      CREATED:{{ group.created }}</p>
+  {% endfor %}
+
   {% for member in members %}
-    <p>{{ member.id }}, {{ member.user.username }}, {{ member.group.name }}, {{ member.status }},
-      {{ member.created }}</p>
+    <p>ID:{{ member.id }}, USERNAME:{{ member.user.username }}, GROUP:{{ member.group.name }},
+      STATUS:{{ member.status }}, CREATED:{{ member.created }}</p>
+  {% endfor %}
+
+  {% for record in records %}
+    <p>ID:{{ record.id }}, AMOUNT:{{ record.amount }}, DESCRIPTION:{{ record.description }},
+      STATUS:{{ record.status }}, SPLIT:{{ record.split }}, NAME:{{ record.group.name }},
+      USERNAME:{{ record.user.username }}, CREATED:{{ record.created }} </p>
   {% endfor %}
 
 {% endblock %}

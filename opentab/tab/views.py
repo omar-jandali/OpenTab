@@ -81,10 +81,13 @@ def addMembers(request, groupId):
             user = cd['user']
             valid_user = User.objects.get(username=user)
             new_member = Member.objects.create(
-                user = user,
+                user = valid_user,
                 group = group,
                 status = 1,
             )
+            update_group = Group.objects.get(id=groupId)
+            update_group.count = update_group.count + 1
+            update_group.save()
             return redirect('/tab/accounts')
     else:
         addMembers = AddMembersForm()
@@ -97,9 +100,9 @@ def addMembers(request, groupId):
         }
     return render(request, 'tabs/add_members.html', params)
 
-def addRecord(request, groupName):
-    currentUser = User.objects.get(username='hanijandali')
-    currentGroup = Group.objects.get(name=groupName)
+def addRecord(request, groupId):
+    user = User.objects.get(username='omar')
+    group = Group.objects.get(id=groupId)
     if request.method == 'POST':
         form = AddRecordForm(request.POST)
         if form.is_valid():
@@ -112,18 +115,17 @@ def addRecord(request, groupName):
                 description = description,
                 status = 1,
                 split = split,
-                group_reference = currentGroup.reference_code,
-                user = currentUser,
+                group = group,
+                user = user,
             )
             return redirect('/tab/accounts')
     else:
         form = AddRecordForm()
         message = 'fill out the form to add a record'
         parameters = {
-            'currentGroup':currentGroup,
+            'group':group,
             'form':form,
             'message':message,
-            'groupName':groupName
         }
     return render(request, 'tabs/add_record.html', parameters)
 
@@ -131,10 +133,12 @@ def accounts(request):
     groups = Group.objects.all()
     members = Member.objects.all()
     users = User.objects.all()
+    records = Record.objects.all()
     params = {
         'groups':groups,
         'members':members,
         'users':users,
+        'records':records,
     }
     return render(request, 'tabs/accounts.html', params)
     # return render(request, 'tabs/addMembers.html', params)

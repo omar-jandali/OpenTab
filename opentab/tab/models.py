@@ -39,8 +39,8 @@ class Record(models.Model):
     # even split between everyone selected or indiviual amounts
     # 1 = even split
     # 2 = individual split
-    #group_reference = models.IntegerField(default=0) #server
-    user = models.CharField(max_length=25) #server
+    group = models.ForeignKey(Group, default=1, on_delete=models.CASCADE) #server
+    user = models.ForeignKey(User, default=1, on_delete=models.CASCADE) #server
     created = models.DateTimeField(auto_now_add=True) #server
 
 class Activity(models.Model):
