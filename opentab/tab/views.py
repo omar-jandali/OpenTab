@@ -4,8 +4,8 @@ from django.http import HttpResponseRedirect
 
 from random import randint
 
-from .models import Group, User, Member, Record
-from .forms import CreateGroupForm, AddMembersForm, AddRecordForm
+from .models import Group, User, Member, Record, Transaction
+from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
 
 # the following def is going to be what grabs all of the different groups that
 # are in the database
@@ -79,13 +79,6 @@ def groups(request):
                 reference_code = referenceCode,
                 created_by = user,
             )
-            # new_group = form.save(commit=False)
-            # new_group.name = groupName
-            # new_group.description = groupDescription
-            # new_group.reference_code = referenceCode
-            # new_group.created_by = user.username
-            # new_group.save()
-
             # the new_member instance is create and saaved that will add the first
             # member of the group which is the person that created the group
             new_member = Member.objects.create(
@@ -97,13 +90,13 @@ def groups(request):
             #return redirect(reverse('add_members', args=[new_group.id]))
     else:
         # the following is the storing of the forms
-        createGroup = CreateGroupForm()
+        form = CreateGroupForm()
         message = 'enter group info below'
     # the following are all the objects that are going to be passed to the
     # rendering remplate
     parameters = {
-        "creategroup" : createGroup,
-        "message" : message,
+        'form':form,
+        'message':message,
     }
     return render(request, 'tabs/create_group.html', parameters)
 
@@ -141,11 +134,11 @@ def addMembers(request, groupId):
         # the form and users objects are passed to the form. This is because instead
         # of typing in a username, it is easier to have a list of all the user objects
         # in a scollable input form and just click on who the new person is
-        addMembers = AddMembersForm()
+        form = AddMembersForm()
         users = User.objects.all()
         message = 'add members below'
         params = {
-            'addMembers':addMembers,
+            'form':form,
             'message':message,
             'group':group,
         }
@@ -164,12 +157,8 @@ def addRecord(request, groupId):
         form = AddRecordForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
-            amount = cd['amount']
-            description = cd['description']
             split = cd['split']
             new_record = Record.objects.create(
-                amount = amount,
-                description = description,
                 status = 1,
                 split = split,
                 group = group,
@@ -188,6 +177,37 @@ def addRecord(request, groupId):
         }
     return render(request, 'tabs/add_record.html', parameters)
 
+# This is the view that is going to be manage the creation of different
+# transactions that are going to be used to track how much money each person is
+# paying for each record
+def addTransaction(request, groupId, recordId):
+    user = User.objects.get(username='omar')
+    group = Group.objects.get(id=groupId)
+    record = Record.objects.get(id=recordId)
+    if request.method == 'POST':
+        form = AddTransactionForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            amount = cd['amount']
+            description = cd['description']
+            new_transaction = Transaction.objects.create(
+                amount = amount,
+                description = description,
+                group = group,
+                user = user,
+                record = record,
+            )
+            return redirect('tab/accounts')
+    else:
+        form = AddTransactionForm()
+        message = 'fill out the form below'
+        parameters = {
+            'record':record,
+            'form':form,
+            'message':message
+        }
+    return render(request, 'tabs/add_transactions.html', parameters)
+
 # this is just a view that is used to display all of the differnet accounts and
 # information that is stored in the database.
 def accounts(request):
@@ -197,11 +217,13 @@ def accounts(request):
     members = Member.objects.all()
     users = User.objects.all()
     records = Record.objects.all()
+    transactions = Transaction.objects.all()
     params = {
         'groups':groups,
         'members':members,
         'users':users,
         'records':records,
+        'transactions':transactions,
     }
     return render(request, 'tabs/accounts.html', params)
     # return render(request, 'tabs/addMembers.html', params)

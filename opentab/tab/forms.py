@@ -3,7 +3,7 @@
 # that i think need to be created are the following...
 from django import forms
 from django.forms import ModelForm
-from tab.models import Group, Member, Record
+from tab.models import Group, Member, Record, Transaction
 
 split_bill_choices = (('1', 'even',),
                       ('2', 'individual',))
@@ -26,4 +26,9 @@ class AddRecordForm(forms.ModelForm):
     )
     class Meta:
         model = Record
-        fields = ['amount', 'description', 'split']
+        fields = ['split']
+
+class AddTransactionForm(forms.ModelForm):
+    class Meta:
+        model = Transaction
+        fields = ['amount', 'description', 'user']

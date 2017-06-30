@@ -2,26 +2,30 @@
 
 {% block content %}
   <p>testing page</p>
-
+  <h3>Users</h3>
   {% for user in users %}
     <p>{{ user.username }}</p>
   {% endfor %}
-
+  <h3>groups</h3>
   {% for group in groups %}
     <p>ID:{{ group.id }}, NAME:{{ group.name }}, DESCRIPTION:{{ group.description }}, COUNT:{{ group.count }},
       STATUS:{{ group.status }}, REFERENCE:{{ group.reference_code }}, CREATED BY:{{ group.created_by.username }},
       CREATED:{{ group.created }}</p>
   {% endfor %}
-
+  <h3>members</h3>
   {% for member in members %}
     <p>ID:{{ member.id }}, USERNAME:{{ member.user.username }}, GROUP:{{ member.group.name }},
       STATUS:{{ member.status }}, CREATED:{{ member.created }}</p>
   {% endfor %}
-
+  <h3>records</h3>
   {% for record in records %}
-    <p>ID:{{ record.id }}, AMOUNT:{{ record.amount }}, DESCRIPTION:{{ record.description }},
-      STATUS:{{ record.status }}, SPLIT:{{ record.split }}, NAME:{{ record.group.name }},
+    <p>ID:{{ record.id }}, STATUS:{{ record.status }}, SPLIT:{{ record.split }}, NAME:{{ record.group.name }},
       USERNAME:{{ record.user.username }}, CREATED:{{ record.created }} </p>
   {% endfor %}
-
+  <h3>transactions</h3>
+  {% for transaction in transactions %}
+  <p>ID:{{ transaction.id }}, AMOUNT:{{ trnsaction.amount }}, DESCRIPTION:{{ transaction.description }},
+    GROUP:{{ transaction.group.name }}, USER:{{ transaction.user.username }},
+    RECORD:{{ transaction.record.id }}, CREATED:{{ transaction.created }}</p>
+  {% endfor %}
 {% endblock %}
