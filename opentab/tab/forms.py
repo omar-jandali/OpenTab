@@ -24,8 +24,7 @@ class CreateRecordForm(forms.Form):
 class LoginForm(forms.Form):
     username = forms.CharField()
     password = forms.CharField()
-
-
+    
 # Validates password agaisnt validators defined in settings
 def pass_val(word):
     validators.validate_password(password=word)
