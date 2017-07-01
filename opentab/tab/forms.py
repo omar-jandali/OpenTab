@@ -7,20 +7,6 @@ from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.models import User
 import django.contrib.auth.password_validation as validators
 
-
-class CreateGroupForm(forms.Form):
-    name = forms.CharField(max_length=25)
-    description = forms.CharField(max_length=200)
-    image = forms.ImageField()
-    member_count = forms.IntegerField()
-
-
-class CreateRecordForm(forms.Form):
-    amount = forms.FloatField()
-    description = forms.CharField(max_length=200)
-    type = forms.IntegerField()
-
-
 class LoginForm(forms.Form):
     username = forms.CharField()
     password = forms.CharField()
