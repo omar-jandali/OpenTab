@@ -18,7 +18,6 @@ class LoginForm(forms.Form):
 def pass_val(word):
     validators.validate_password(password=word)
 
-
 # Checks username for uniquness and length
 def unique_username(username):
     if len(username) < 6:
@@ -32,7 +31,6 @@ def unique_username(username):
                 _('Username is already taken.')
             )
 
-
 # Checks email for uniqueness (bootstrap will check format)
 def unique_email(email):
     u = User.objects.filter(email=email).exists()
@@ -40,7 +38,6 @@ def unique_email(email):
         raise ValidationError(
             _('Email has already been registered.')
         )
-
 
 class SignupForm(forms.Form):
     f_name = forms.CharField(label='First Name', max_length=50)
