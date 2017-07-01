@@ -1,3 +1,7 @@
 from django.contrib import admin
+from .models import Group, Member, Record, Transaction, Request, Friend, Activity
+from .models import Notification, Profile
 
-# Register your models here.
+admin.site.register(Friend)
+admin.site.register(Group)
+admin.site.register(Member)

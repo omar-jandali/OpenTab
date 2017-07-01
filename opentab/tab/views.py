@@ -1,15 +1,18 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required, user_passes_test
 
 from random import randint
 
 from .models import Group, User, Member, Record, Transaction
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
+from .forms import SignupForm, LoginForm
 
-# the following def is going to be what grabs all of the different groups that
-# are in the database
-# filters can be added later
+
 
 # The following view is what will be used to display all of the groups and informaiton
 # for the logged in user including groups balances and friends
