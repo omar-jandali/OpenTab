@@ -161,10 +161,10 @@ def groups(request):
         message = 'enter group info below'
     # the following are all the objects that are going to be passed to the
     # rendering remplate
-    parameters = {
-        'form':form,
-        'message':message,
-    }
+        parameters = {
+            'form':form,
+            'message':message,
+        }
     return render(request, 'tabs/create_group.html', parameters)
 
 # This view is what will add different members to the gorup that is selected. This
@@ -221,28 +221,29 @@ def addRecord(request, groupId):
     group = Group.objects.get(id=groupId)
     # the followin process is similar to the form validation for the group view.
     if request.method == 'POST':
+        message = 'process'
         form = AddRecordForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
             split = cd['split']
             new_record = Record.objects.create(
-                status = 1,
                 split = split,
+                status = 1,
                 group = group,
                 user = user,
             )
-            return redirect('/tab/accounts')
+            return redirect('tab/accounts')
     else:
         # the only tyhing that needed to be passed was the group to display the naem
         # and the form that is going to be used and filled out by the user and submitted
         form = AddRecordForm()
-        message = 'fill out the form to add a record'
-        parameters = {
+        message = 'no processing'
+        params = {
             'group':group,
             'form':form,
             'message':message,
         }
-    return render(request, 'tabs/add_record.html', parameters)
+    return render(request, 'tabs/add_record.html', params)
 
 # This is the view that is going to be manage the creation of different
 # transactions that are going to be used to track how much money each person is

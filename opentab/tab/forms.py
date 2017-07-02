@@ -8,7 +8,6 @@ from tab.models import Group, Member, Record, Transaction
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
-import django.contrib.auth.password_validation as validators
 
 class LoginForm(forms.Form):
     username = forms.CharField()
@@ -62,9 +61,6 @@ class SignupForm(forms.Form):
                     ['Passwords do not match.'])
         return data
 
-split_bill_choices = (('1', 'even',),
-                      ('2', 'individual',))
-
 class CreateGroupForm(forms.ModelForm):
     class Meta:
         model = Group
@@ -76,11 +72,13 @@ class AddMembersForm(forms.ModelForm):
         fields = ['user']
 
 class AddRecordForm(forms.ModelForm):
+
     split_choices = (('1', 'even'),
-                     ('2', 'individual'))
+                      ('2', 'individual'))
     split = forms.TypedChoiceField(
         choices=split_choices, widget=forms.RadioSelect, coerce=int
     )
+
     class Meta:
         model = Record
         fields = ['split']

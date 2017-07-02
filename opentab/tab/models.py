@@ -25,22 +25,27 @@ MEMBER_STATUS_CHOICES = (
     ('2', 'host'),
 )
 
-RECORD_SPLIT_CHOICES = (
-    ('1', 'even'),
-    ('2', 'individual'),
-)
-
 RECORD_STATUS_CHOICES = (
     ('1', 'unverified'),
     ('2', 'verified'),
 )
 
-NOTIFICATION_TYPE_CHOICES = (
+NOTIFICATION_CATEGORY_CHOICES = (
     ('0', 'group'),
     ('1', 'record'),
     ('2', 'request'),
     ('3', 'friend'),
 )
+
+NOTIFICATION_STATUS_CHOICES = {
+    ('1', 'unread'),
+    ('2', 'read'),
+}
+
+PROFILE_PUBLIC_CHOICES = {
+        ('1', 'public'),
+        ('2', 'private'),
+}
 
 class Request(models.Model):
     user = models.CharField(max_length=22, default='current user')
@@ -49,7 +54,7 @@ class Request(models.Model):
 
 class Friend(models.Model):
     user = models.CharField(max_length=22, default='current user')
-    friend = models.ForeignKey(User, on_delete=models.CASCADE, default=2)
+    friend = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     category = models.SmallIntegerField(choices=FRIEND_CATEGORY_CHOICES, default=1)
     status = models.SmallIntegerField(choices=FRIEND_STATUS_CHOICES, default=1)
     created = models.DateTimeField(auto_now_add=True)
@@ -70,7 +75,7 @@ class Member(models.Model):
     created = models.DateTimeField(auto_now_add=True) #server
 
 class Record(models.Model):
-    split = models.SmallIntegerField(choices=RECORD_SPLIT_CHOICES, default=1) #user
+    split = models.SmallIntegerField(default=1) #user
     status = models.SmallIntegerField(choices=RECORD_STATUS_CHOICES, default=1) #server
     group = models.ForeignKey(Group, default=1, on_delete=models.CASCADE) #server
     user = models.ForeignKey(User, default=1, on_delete=models.CASCADE) #server
@@ -93,10 +98,9 @@ class Activity(models.Model):
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # server
     description = models.CharField(max_length=200)  # server
-    seen = models.BooleanField()  # server
-    types = models.SmallIntegerField(choices=NOTIFICATION_TYPE_CHOICES, default=1)  # server
+    status = models.SmallIntegerField(choices=NOTIFICATION_STATUS_CHOICES, default=1)  # server
+    category = models.SmallIntegerField(choices=NOTIFICATION_CATEGORY_CHOICES, default=1)  # server
     created = models.DateTimeField(auto_now_add=True)  # server
-
 
 class Profile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # server
@@ -105,5 +109,5 @@ class Profile(models.Model):
     state = models.CharField(max_length=45)  # user
     phone = models.BigIntegerField()  # user
     dob = models.DateField()  # user
-    public = models.BooleanField()  # user
+    public = models.SmallIntegerField(choices=PROFILE_PUBLIC_CHOICES, default=1)  # user
     created = models.DateTimeField(auto_now_add=True)  # server
