@@ -2,7 +2,6 @@
 # actually need a form for the user to input informaiton to. The only tables
 # that i think need to be created are the following...
 from django import forms
-<<<<<<< HEAD
 from django.forms import ModelForm
 from tab.models import Group, Member, Record, Transaction
 
