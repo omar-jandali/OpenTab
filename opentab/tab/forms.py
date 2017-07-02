@@ -2,6 +2,7 @@
 # actually need a form for the user to input informaiton to. The only tables
 # that i think need to be created are the following...
 from django import forms
+<<<<<<< HEAD
 from django.forms import ModelForm
 from tab.models import Group, Member, Record, Transaction
 
@@ -16,6 +17,21 @@ class LoginForm(forms.Form):
 # Validates password agaisnt validators defined in settings
 def pass_val(word):
     validators.validate_password(password=word)
+=======
+from django.core.exceptions import ValidationError
+from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth.models import User
+import django.contrib.auth.password_validation as validators
+
+class LoginForm(forms.Form):
+    username = forms.CharField()
+    password = forms.CharField()
+
+# Validates password agaisnt validators defined in settings
+def pass_val(word):
+    validators.validate_password(password=word)
+
+>>>>>>> master
 
 # Checks username for uniquness and length
 def unique_username(username):
