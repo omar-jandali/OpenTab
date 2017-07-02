@@ -12,16 +12,6 @@ from random import randint
 from .models import Group, User, Member, Record, Transaction
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
 from .forms import SignupForm, LoginForm
-=======
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
-from django.contrib import messages
-from .forms import SignupForm, LoginForm
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required, user_passes_test
-
->>>>>>> master
 
 def signup(request):
     if request.method == 'GET':

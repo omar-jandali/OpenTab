@@ -17,21 +17,6 @@ class LoginForm(forms.Form):
 # Validates password agaisnt validators defined in settings
 def pass_val(word):
     validators.validate_password(password=word)
-=======
-from django.core.exceptions import ValidationError
-from django.utils.translation import ugettext_lazy as _
-from django.contrib.auth.models import User
-import django.contrib.auth.password_validation as validators
-
-class LoginForm(forms.Form):
-    username = forms.CharField()
-    password = forms.CharField()
-
-# Validates password agaisnt validators defined in settings
-def pass_val(word):
-    validators.validate_password(password=word)
-
->>>>>>> master
 
 # Checks username for uniquness and length
 def unique_username(username):
