@@ -224,6 +224,9 @@ def addRecord(request, groupId):
     if request.method == 'POST':
         message = 'process'
         form = AddRecordForm(request.POST)
+        # the following will take the form that is based on the records model in the
+        # forms.py file. It will only process the split port on the html file.
+        # The record members will be processed below.
         if form.is_valid():
             cd = form.cleaned_data
             print(cd)
@@ -234,9 +237,19 @@ def addRecord(request, groupId):
                 group = group,
                 user = user,
             )
+            # the following will take all of the members in the group and for each
+            # member, it will go through and check to see if the if the checkbox
+            # for the specific user is selected.
             for member in members:
+                # if the user was selected, then the username would appear in the
+                # POST request. If the user was not selected, it would not appear
+                # in the POST request. 
                 if member.user.username in request.POST:
+                    # if the member is in the request, it will find the members user
+                    # recor in the database and use it to create the new transaciton
+                    # history.
                     selected_user = User.objects.get(username = member.user.username)
+                    # this is the new transaction record.
                     new_transaction = Transaction.objects.create(
                         amount = 0.00,
                         description = 'description',
