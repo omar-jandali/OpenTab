@@ -61,7 +61,7 @@ class Friend(models.Model):
 
 class Group(models.Model):
     name = models.CharField(max_length = 25)
-    description = models.CharField(max_length = 250)
+    description = models.CharField(max_length = 250, null=True)
     count = models.SmallIntegerField(default=1)
     status = models.SmallIntegerField(choices=GROUP_STATUS_CHOICES, default=1)
     reference_code = models.IntegerField(default=0)
@@ -76,6 +76,7 @@ class Member(models.Model):
 
 class Record(models.Model):
     split = models.SmallIntegerField(default=1) #user
+    count = models.IntegerField(default=1)
     status = models.SmallIntegerField(choices=RECORD_STATUS_CHOICES, default=1) #server
     group = models.ForeignKey(Group, default=1, on_delete=models.CASCADE) #server
     user = models.ForeignKey(User, default=1, on_delete=models.CASCADE) #server

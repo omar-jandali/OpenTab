@@ -24,8 +24,8 @@
   {% endfor %}
   <h3>transactions</h3>
   {% for transaction in transactions %}
-  <p>ID:{{ transaction.id }}, AMOUNT:{{ trnsaction.amount }}, DESCRIPTION:{{ transaction.description }},
-    GROUP:{{ transaction.group.name }}, USER:{{ transaction.user.username }},
+  <p>ID:{{ transaction.id }}, USER:{{ transaction.user.username }},
+    AMOUNT:{{ trnsaction.amount }}, DESCRIPTION:{{ transaction.description }},GROUP:{{ transaction.group.name }}, 
     RECORD:{{ transaction.record.id }}, CREATED:{{ transaction.created }}</p>
   {% endfor %}
 {% endblock %}

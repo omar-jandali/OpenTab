@@ -8,6 +8,10 @@
   <form action="." method="POST">
     {% csrf_token %}
     {{ form.as_p }}
+    {% for member in members %}
+      {{ member.user.username }}
+      <input name="{{member.user.username}}" value="checked" type="checkbox"><br>
+    {% endfor %}
     <input type="submit" name="submit" value="submit">
   </form>
 {% endblock %}

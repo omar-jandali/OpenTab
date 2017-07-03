@@ -219,12 +219,14 @@ def addRecord(request, groupId):
     # this record is attached to and who created the record.
     user = User.objects.get(username='omar')
     group = Group.objects.get(id=groupId)
+    members = Member.objects.filter(group=groupId)
     # the followin process is similar to the form validation for the group view.
     if request.method == 'POST':
         message = 'process'
         form = AddRecordForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
+            print(cd)
             split = cd['split']
             new_record = Record.objects.create(
                 split = split,
@@ -232,7 +234,18 @@ def addRecord(request, groupId):
                 group = group,
                 user = user,
             )
-            return redirect('tab/accounts')
+            for member in members:
+                if member.user.username in request.POST:
+                    selected_user = User.objects.get(username = member.user.username)
+                    new_transaction = Transaction.objects.create(
+                        amount = 0.00,
+                        description = 'description',
+                        group = group,
+                        user = selected_user,
+                        record = new_record,
+                    )
+            return redirect('accounts')
+
     else:
         # the only tyhing that needed to be passed was the group to display the naem
         # and the form that is going to be used and filled out by the user and submitted
@@ -240,6 +253,7 @@ def addRecord(request, groupId):
         message = 'no processing'
         params = {
             'group':group,
+            'members':members,
             'form':form,
             'message':message,
         }

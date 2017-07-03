@@ -78,7 +78,6 @@ class AddRecordForm(forms.ModelForm):
     split = forms.TypedChoiceField(
         choices=split_choices, widget=forms.RadioSelect, coerce=int
     )
-
     class Meta:
         model = Record
         fields = ['split']
