@@ -10,7 +10,7 @@ from random import randint
 
 from .models import Group, User, Member, Record, Transaction
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
-from .forms import SignupForm, LoginForm
+from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
 
 def signup(request):
     if request.method == 'GET':
@@ -148,11 +148,11 @@ def groups(request):
             )
             # the new_member instance is create and saaved that will add the first
             # member of the group which is the person that created the group
-            new_member = Member.objects.create(
-                user = user,
-                group = new_group,
-                status = 1,
-            )
+            # new_member = Member.objects.create(
+            #     user = user,
+            #     group = new_group,
+            #     status = 1,
+            # )
             return redirect('/tab/accounts')
             #return redirect(reverse('add_members', args=[new_group.id]))
     else:
@@ -178,36 +178,39 @@ def addMembers(request, groupId):
     # the group object related to the id that was passed in
     currentUser = User.objects.get(username='omar')
     group = Group.objects.get(id=groupId)
+    users = User.objects.all()
     # the form is similar to the form submition above for reference
     if request.method == "POST":
-        form = AddMembersForm(request.POST)
-        if form.is_valid():
-            cd = form.cleaned_data
-            user = cd['user']
-            valid_user = User.objects.get(username=user)
-            new_member = Member.objects.create(
-                user = valid_user,
-                group = group,
-                status = 1,
-            )
-            # the followin three lines will grab the group that the user is adding
-            # a member to and updating the groups count by one every time a new user
-            # is added to the group
-            update_group = Group.objects.get(id=groupId)
-            update_group.count = update_group.count + 1
-            update_group.save()
-            return redirect('/tab/accounts')
+        # the following will scroll through every user in the users table
+        for user in users:
+            # it will then check to see if the usersname was returned in the request.
+            # if the username was checked, it will be returned, otherwise it will not
+            # be passed.
+            if user.username in request.POST:
+                # user that is currently selected will be passed and then passed into
+                # the new record that is created for every selected member
+                selected_user = User.objects.get(username = user.username)
+                new_member = Member.objects.create(
+                    user = selected_user,
+                    group = group,
+                    status = 1,
+                )
+                # next three lines will keep track and updated the group count every time that
+                # a new user is added to the specific group that is selected.
+                updated_group = group
+                updated_group.count = updated_group.count + 1
+                updated_group.save()
+        return redirect('/tab/accounts')
     else:
-        # the form and users objects are passed to the form. This is because instead
-        # of typing in a username, it is easier to have a list of all the user objects
-        # in a scollable input form and just click on who the new person is
-        form = AddMembersForm()
-        users = User.objects.all()
+        # the form that the user fills out will display all of the members of the
+        # app and the current user will select the checkbox next to the name
+        # of the user that he wants to add to the group. THIS WILL CHANGE TO DISPLAY
+        # FRIENDS AFTER THE FRIENDS MODEL AND FUNCTION ARE CREATED
         message = 'add members below'
         params = {
-            'form':form,
             'message':message,
             'group':group,
+            'users':users,
         }
     return render(request, 'tabs/add_members.html', params)
 
@@ -233,6 +236,7 @@ def addRecord(request, groupId):
             split = cd['split']
             new_record = Record.objects.create(
                 split = split,
+                count = 0,
                 status = 1,
                 group = group,
                 user = user,
@@ -243,7 +247,7 @@ def addRecord(request, groupId):
             for member in members:
                 # if the user was selected, then the username would appear in the
                 # POST request. If the user was not selected, it would not appear
-                # in the POST request. 
+                # in the POST request.
                 if member.user.username in request.POST:
                     # if the member is in the request, it will find the members user
                     # recor in the database and use it to create the new transaciton
@@ -257,6 +261,9 @@ def addRecord(request, groupId):
                         user = selected_user,
                         record = new_record,
                     )
+                    update_record = new_record
+                    update_record.count = update_record.count + 1
+                    update_record.save()
             return redirect('accounts')
 
     else:
@@ -279,28 +286,50 @@ def addTransaction(request, groupId, recordId):
     user = User.objects.get(username='omar')
     group = Group.objects.get(id=groupId)
     record = Record.objects.get(id=recordId)
+    transactions = Transaction.objects.all()
     if request.method == 'POST':
-        form = AddTransactionForm(request.POST)
+        form = EvenSplitTransactionForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
             amount = cd['amount']
             description = cd['description']
-            new_transaction = Transaction.objects.create(
-                amount = amount,
-                description = description,
-                group = group,
-                user = user,
-                record = record,
-            )
-            return redirect('tab/accounts')
+            if record.split == 1:
+                split_amount = SplitEven(record, amount)
+            for trans in transactions:
+                if trans.record.id == record.id:
+                    trans.description = description
+                    trans.amount = split_amount
+                    trans.save()
+        return redirect('accounts')
+            # cd = form.cleaned_data
+            # amount = cd['amount']
+            # description = cd['description']
+            # new_transaction = Transaction.objects.create(
+            #     amount = amount,
+            #     description = description,
+            #     group = group,
+            #     user = user,
+            #     record = record,
+            # )
+            # return redirect('tab/accounts')
     else:
-        form = AddTransactionForm()
-        message = 'fill out the form below'
-        parameters = {
-            'record':record,
-            'form':form,
-            'message':message
-        }
+        if record.split == 1:
+            form = EvenSplitTransactionForm()
+            message = 'fill out the form below'
+            parameters = {
+                'record':record,
+                'form':form,
+                'message':message,
+                'transactions':transactions,
+            }
+        if record.split == 2:
+            form = AddTransactionForm()
+            message = 'fill out the form below'
+            parameters = {
+                'record':record,
+                'form':form,
+                'message':message
+            }
     return render(request, 'tabs/add_transactions.html', parameters)
 
 # this is just a view that is used to display all of the differnet accounts and
@@ -341,3 +370,12 @@ def accountsDelete(request):
 def generateReferenceNumber():
     reference = randint(1, 2147483646)
     return(reference)
+
+def SplitEven(record, amount):
+    record_count = record.count
+    split_amount = amount/record_count
+    rounded_amount = round(split_amount, 2)
+    print (record_count)
+    print (amount)
+    print (split_amount)
+    return rounded_amount

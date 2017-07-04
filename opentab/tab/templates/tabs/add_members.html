@@ -7,7 +7,12 @@
   {% endif %}
   <form action="." method="POST">
     {% csrf_token %}
-    {{ form.as_p }}
+    {% for user in users %}
+      <p>
+        {{ user.username }}
+        <input type="checkbox" name="{{user.username}}" value="{{user.username}}">
+      </p>
+    {% endfor %}
     <input type="submit" name="submit" value="submit">
   </form>
 {% endblock %}

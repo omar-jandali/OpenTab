@@ -76,7 +76,7 @@ class Member(models.Model):
 
 class Record(models.Model):
     split = models.SmallIntegerField(default=1) #user
-    count = models.IntegerField(default=1)
+    count = models.IntegerField(default=0)
     status = models.SmallIntegerField(choices=RECORD_STATUS_CHOICES, default=1) #server
     group = models.ForeignKey(Group, default=1, on_delete=models.CASCADE) #server
     user = models.ForeignKey(User, default=1, on_delete=models.CASCADE) #server
