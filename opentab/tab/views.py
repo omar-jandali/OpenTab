@@ -10,7 +10,7 @@ from random import randint
 
 from .models import Group, User, Member, Record, Transaction
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
-from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
+from .forms import SignupForm, LoginForm, EvenSplitTransactionForm, IndividualSplitTransactionForm
 
 def signup(request):
     if request.method == 'GET':
@@ -288,30 +288,22 @@ def addTransaction(request, groupId, recordId):
     record = Record.objects.get(id=recordId)
     transactions = Transaction.objects.all()
     if request.method == 'POST':
-        form = EvenSplitTransactionForm(request.POST)
-        if form.is_valid():
-            cd = form.cleaned_data
-            amount = cd['amount']
-            description = cd['description']
-            if record.split == 1:
+        if record.split == 1:
+            form = EvenSplitTransactionForm(request.POST)
+            if form.is_valid():
+                cd = form.cleaned_data
+                amount = cd['amount']
+                description = cd['description']
                 split_amount = SplitEven(record, amount)
-            for trans in transactions:
-                if trans.record.id == record.id:
-                    trans.description = description
-                    trans.amount = split_amount
-                    trans.save()
+                for trans in transactions:
+                    if trans.record.id == record.id:
+                        trans.description = description
+                        trans.amount = split_amount
+                        trans.save()
+                return redirect('accounts')
+        if record.split == 2:
+            form = IndividualSplitTransactionForm(request.POST)
         return redirect('accounts')
-            # cd = form.cleaned_data
-            # amount = cd['amount']
-            # description = cd['description']
-            # new_transaction = Transaction.objects.create(
-            #     amount = amount,
-            #     description = description,
-            #     group = group,
-            #     user = user,
-            #     record = record,
-            # )
-            # return redirect('tab/accounts')
     else:
         if record.split == 1:
             form = EvenSplitTransactionForm()
@@ -322,15 +314,16 @@ def addTransaction(request, groupId, recordId):
                 'message':message,
                 'transactions':transactions,
             }
+            return render(request, 'tabs/add_even_transactions.html', parameters)
         if record.split == 2:
-            form = AddTransactionForm()
             message = 'fill out the form below'
             parameters = {
                 'record':record,
                 'form':form,
-                'message':message
+                'message':message,
+                'transactions':transactions,
             }
-    return render(request, 'tabs/add_transactions.html', parameters)
+            return render(request, 'tabs/add_individual_transaction.html', parameters)
 
 # this is just a view that is used to display all of the differnet accounts and
 # information that is stored in the database.

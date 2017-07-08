@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Add members to {{record.name}}</h1>
+  {% if message %}
+    <p>{{message}}</p>
+  {% endif %}
+  <form action="." method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <p>Tax: <input type="text" name="tax" value=""></p>
+    <p>Tip: <input type="text" name="tip" value=""></p>
+    <input type="submit" name="submit" value="submit">
+  </form>
+{% endblock %}
