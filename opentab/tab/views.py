@@ -277,7 +277,7 @@ def addRecord(request, groupId):
             'form':form,
             'message':message,
         }
-    return render(request, 'tabs/add_record.html', params)
+    return render(request, 'tabs/add_records.html', params)
 
 # This is the view that is going to be manage the creation of different
 # transactions that are going to be used to track how much money each person is
