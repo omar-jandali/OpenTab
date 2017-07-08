@@ -78,7 +78,6 @@ class AddRecordForm(forms.ModelForm):
     split = forms.TypedChoiceField(
         choices=split_choices, widget=forms.RadioSelect, coerce=int
     )
-
     class Meta:
         model = Record
         fields = ['split']
@@ -87,3 +86,15 @@ class AddTransactionForm(forms.ModelForm):
     class Meta:
         model = Transaction
         fields = ['amount', 'description', 'user']
+
+class EvenSplitTransactionForm(forms.ModelForm):
+    class Meta:
+        model = Transaction
+        fields = ['amount', 'description']
+    # amount = forms.DecimalField(label='Total Amount', decimal_places=2, max_digits=9)
+    # description = forms.CharField(max_length=250)
+
+class IndividualSplitTransactionForm(forms.ModelForm):
+    class Meta:
+        model = Transaction
+        fields = ['amount', 'description']

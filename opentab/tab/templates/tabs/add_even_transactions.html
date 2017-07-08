@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.html" %}aa
 
 {% block content %}
   <h1>Add members to {{record.name}}</h1>
@@ -8,6 +8,11 @@
   <form action="." method="POST">
     {% csrf_token %}
     {{ form.as_p }}
+    {% for trans in transactions %}
+      {% if trans.record.id == record.id %}
+        <p>{{ trans.user.username }}</p>
+      {% endif %}
+    {% endfor %}
     <input type="submit" name="submit" value="submit">
   </form>
 {% endblock %}
