@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.forms import formset_factory
 
 from random import randint
 
@@ -153,7 +154,7 @@ def groups(request):
             #     group = new_group,
             #     status = 1,
             # )
-            return redirect('/tab/accounts')
+            return redirect('/accounts')
             #return redirect(reverse('add_members', args=[new_group.id]))
     else:
         # the following is the storing of the forms
@@ -200,7 +201,7 @@ def addMembers(request, groupId):
                 updated_group = group
                 updated_group.count = updated_group.count + 1
                 updated_group.save()
-        return redirect('/tab/accounts')
+        return redirect('/accounts')
     else:
         # the form that the user fills out will display all of the members of the
         # app and the current user will select the checkbox next to the name
@@ -264,7 +265,7 @@ def addRecord(request, groupId):
                     update_record = new_record
                     update_record.count = update_record.count + 1
                     update_record.save()
-            return redirect('accounts')
+            return redirect('/accounts')
 
     else:
         # the only tyhing that needed to be passed was the group to display the naem
@@ -302,8 +303,9 @@ def addTransaction(request, groupId, recordId):
                         trans.save()
                 return redirect('accounts')
         if record.split == 2:
-            form = IndividualSplitTransactionForm(request.POST)
+            form = IndividualSplitTransactionForm(request.POST, request.FILES)
         return redirect('accounts')
+        #--------------------------------------------------------
     else:
         if record.split == 1:
             form = EvenSplitTransactionForm()
@@ -317,9 +319,15 @@ def addTransaction(request, groupId, recordId):
             return render(request, 'tabs/add_even_transactions.html', parameters)
         if record.split == 2:
             message = 'fill out the form below'
+            TransFormSet = formset_factory(IndividualSplitTransactionForm, extra=3)
+            # for trans in transactions:
+            #     if trans.record.id == record.id:
+            #         print(trans.user.username)
+            #         form = IndividualSplitTransactionForm(prefix=trans.user.username)
+            #         print(form)
             parameters = {
                 'record':record,
-                'form':form,
+                'TransFormSet':TransFormSet,
                 'message':message,
                 'transactions':transactions,
             }
@@ -349,7 +357,7 @@ def accountsDelete(request):
     groups = Group.objects.all()
     if request.method == 'POST':
         Groups.objects.all().remove()
-        return redirect('/tab/accounts')
+        return redirect('/accounts')
     else:
         message = 'delete all of the following records'
         params = {
