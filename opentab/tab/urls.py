@@ -8,7 +8,6 @@ from . import views
 urlpatterns = [
     url(r'^login$', views.login_page, name='login'),
     url(r'^signup$', views.signup, name='signup'),
-    url(r'^loggedin$', views.logged_in, name='logged_in'),
     url(r'^logout$', views.logout_page, name='logout_page'),
     url(r'^createGroup/$', views.createGroup, name='create_group'),
     # for this url, you will have to enter the group id and then add members to

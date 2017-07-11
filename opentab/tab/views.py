@@ -85,14 +85,6 @@ def logout_page(request):
         request.session.pop('username')
         return redirect('accounts')
 
-
-@login_required
-def logged_in(request):
-    print('user is logged in')
-    s = "<h1>Logged in as {} {}</h1>".format(request.user.first_name, request.user.last_name)
-    s += "<br><a href='http://127.0.0.1:8000/logout'>logout</a>"
-    return HttpResponse(s)
-
 # The following view is what will be used to display all of the groups and informaiton
 # for the logged in user including groups balances and friends
 # Passed in var:
@@ -106,6 +98,23 @@ def userHome(request):
         members = Member.objects.filter(user=currentUser).all()
         # this is used to actually display the group info that the user is a part of
         groups = Group.objects.all()
+        if request.method == "POST":
+            for searched in request.POST:
+                searched = request.POST['searched']
+                searchedUser = User.objects.get(username = searched)
+                if searchedUser == None:
+                    message = 'the username does not exist'
+                else:
+                    message = ''
+                parameters = {
+                    'currentUser':currentUser,
+                    'members':members,
+                    'groups':groups,
+                    'searchedUser':searchedUser,
+                    'message':message,
+                }
+                return render(request, 'tabs/user_home.html', parameters)
+
         #these are all the parameters that need to be passed to the html tempalte
         parameters = {
             'currentUser':currentUser,
@@ -146,7 +155,7 @@ def groupHome(request, groupId):
 # The view is g0ing to be used to create the group and add the information for the
 # group before creating the record in the database. It will also be incharge of adding
 # the first memeber to the group (the person who created the group).
-#
+
 #  will redirect to the adding memeber view (need to be fixed)
 def createGroup(request):
     if 'username' not in request.session:

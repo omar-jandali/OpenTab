@@ -2,6 +2,15 @@
 
 {% block content %}
   <h2>{{ currentUser.username }}</h2>
+  <form action="" method="POST">
+    {% csrf_token %}
+    <input type="text" name="searched">
+    <input type="submit" name="submit" value="submit">
+  </form>
+  <h3>{{ message }}</h3>
+  {% if searchedUser %}
+    <p>{{ searchedUser }}</p>
+  {% endif %}
   <ul>
     {% for member in members %}
       <li>{{ member.group.name }}</li>
