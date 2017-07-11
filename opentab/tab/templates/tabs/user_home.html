@@ -4,11 +4,7 @@
   <h2>{{ currentUser.username }}</h2>
   <ul>
     {% for member in members %}
-      {% for group in groups %}
-        {% if group.reference_code == member.group_reference %}
-          <li><a href="">{{ group.name }}</a></li>
-        {% endif %}
-      {% endfor %}
+      <li>{{ member.group.name }}</li>
     {% endfor %}
   </ul>
 {% endblock %}
