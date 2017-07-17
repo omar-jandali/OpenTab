@@ -11,7 +11,7 @@ from django.utils.translation import ugettext_lazy as _
 
 class LoginForm(forms.Form):
     username = forms.CharField(max_length=22)
-    password = forms.CharField(max_length=22)
+    password = forms.CharField(max_length=22, widget=forms.PasswordInput)
 
 class SignupForm(forms.Form):
     username = forms.CharField(max_length=22)

@@ -6,7 +6,11 @@
   {{ currentUser }}
   <h3>Users</h3>
   {% for user in users %}
-    <p>{{ user.username }}</p>
+    <p>{{ user.username }} -- {{ user.password }}</p>
+  {% endfor %}
+  <h3>Requests</h3>
+  {% for request in requests %}
+    <p>{{ request.user }}, {{ request.requested }}, {{ request.created }}</p>
   {% endfor %}
   <h3>groups</h3>
   {% for group in groups %}

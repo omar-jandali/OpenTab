@@ -6,10 +6,11 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.forms import formset_factory
+from django.db.models import Q
 
 from random import randint
 
-from .models import Group, User, Member, Record, Transaction
+from .models import Group, User, Member, Record, Transaction, Request
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
 from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
 from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm
@@ -54,19 +55,16 @@ def login_page(request):
             cd = form.cleaned_data
             username = cd['username']
             password = cd['password']
-            valid_user = User.objects.get(username=username)
-            if valid_user:
-                if password == valid_user.password:
-                    request.session['username'] = username
-                    return redirect('/')
-                else:
-                    message = 'Password does not match the username'
+            user = authenticate(username=username, password=password)
+            if user:
+                request.session['username'] = username
+                return redirect('homePage')
             else:
-                message = 'Invalid Username'
-            parameters = {
-                'message':message,
-                'form':form,
-            }
+                message = 'invalid login info'
+                parameters = {
+                    'message':message,
+                    'form':form,
+                }
             return render(request, 'tabs/login.html', parameters)
     else:
         form = LoginForm()
@@ -96,6 +94,9 @@ def userHome(request):
         currentUser = User.objects.get(username=username)
         # this is used to grab all of the groups that the user is a part of
         members = Member.objects.filter(user=currentUser).all()
+        # the following are what will be used ot get all of the user requests 
+        requester = Request.objects.filter(user = username).all()
+        requested = Request.objects.filter(requested = currentUser).all()
         # this is used to actually display the group info that the user is a part of
         groups = Group.objects.all()
         if request.method == "POST":
@@ -112,6 +113,8 @@ def userHome(request):
                     'groups':groups,
                     'searchedUser':searchedUser,
                     'message':message,
+                    'requester':requester,
+                    'requested':requested,
                 }
                 return render(request, 'tabs/user_home.html', parameters)
 
@@ -119,7 +122,9 @@ def userHome(request):
         parameters = {
             'currentUser':currentUser,
             'members':members,
-            'groups':groups
+            'groups':groups,
+            'requester':requester,
+            'requested':requested,
         }
         return render(request, 'tabs/user_home.html', parameters)
     else:
@@ -151,6 +156,29 @@ def groupHome(request, groupId):
             'transactions':transactions,
         }
         return render(request, 'tabs/group_home.html', parameters)
+
+def sendRequest(request, username):
+    if 'username' not in request.session:
+        return redirect('login')
+    else:
+        loggedIn = request.session['username']
+        currentUser = User.objects.get(username = loggedIn)
+        requestedUser = User.objects.get(username = username)
+        new_request = Request.objects.create(
+            user = currentUser,
+            requested = requestedUser,
+        )
+        return redirect('accounts')
+
+def acceptRequest(request, username):
+    if 'username' not in requesst.session:
+        return redirect('login')
+    else:
+        loggedIn = request.session['usesrname']
+        currentUser = User.objects.get(username = loggedIn)
+        requestedUser = User.objects.get(username = username)
+
+        return redirect('accounts')
 
 # The view is g0ing to be used to create the group and add the information for the
 # group before creating the record in the database. It will also be incharge of adding
@@ -399,6 +427,7 @@ def accounts(request):
     users = User.objects.all()
     records = Record.objects.all()
     transactions = Transaction.objects.all()
+    requests = Request.objects.all()
     if 'username' in request.session:
         currentUser = request.session['username']
     else:
@@ -410,6 +439,7 @@ def accounts(request):
         'users':users,
         'records':records,
         'transactions':transactions,
+        'requests':requests,
     }
     return render(request, 'tabs/accounts.html', params)
     # return render(request, 'tabs/addMembers.html', params)

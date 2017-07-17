@@ -11,6 +11,19 @@
   {% if searchedUser %}
     <p>{{ searchedUser }}</p>
   {% endif %}
+  {% if requester %}
+  <h3>Pending Requests</h3>
+    {% for request in requester %}
+      <p>{{ request.user }}</p>
+    {% endfor %}
+  {% endif %}
+  {% if requested %}
+  <h3>Friend Requests</h3>
+    {% for request in requested %}
+      <p>{{ request.user }}</p>
+    {% endfor %}
+  {% endif %}
+  <h3>Groups</h3>
   <ul>
     {% for member in members %}
       <li>{{ member.group.name }}</li>
