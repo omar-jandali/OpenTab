@@ -12,6 +12,10 @@
   {% for request in requests %}
     <p>{{ request.user }}, {{ request.requested }}, {{ request.created }}</p>
   {% endfor %}
+  <h3>Friends</h3>
+  {% for friend in friends %}
+    <p>{{ friend.user }}, {{ friend.friend.username }}, {{ friend.category }}</p>
+  {% endfor %}
   <h3>groups</h3>
   {% for group in groups %}
     <p>ID:{{ group.id }}, NAME:{{ group.name }}, DESCRIPTION:{{ group.description }}, COUNT:{{ group.count }},

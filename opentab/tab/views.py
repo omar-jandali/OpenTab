@@ -10,7 +10,7 @@ from django.db.models import Q
 
 from random import randint
 
-from .models import Group, User, Member, Record, Transaction, Request
+from .models import Group, User, Member, Record, Transaction, Request, Friend
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
 from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
 from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm
@@ -94,9 +94,12 @@ def userHome(request):
         currentUser = User.objects.get(username=username)
         # this is used to grab all of the groups that the user is a part of
         members = Member.objects.filter(user=currentUser).all()
-        # the following are what will be used ot get all of the user requests 
+        # the following are what will be used ot get all of the user requests
         requester = Request.objects.filter(user = username).all()
         requested = Request.objects.filter(requested = currentUser).all()
+        # the following are what will be used to grab all of your firends
+        friender = Friend.objects.filter(user = username).all()
+        friended = Friend.objects.filter(friend = currentUser).all()
         # this is used to actually display the group info that the user is a part of
         groups = Group.objects.all()
         if request.method == "POST":
@@ -115,6 +118,8 @@ def userHome(request):
                     'message':message,
                     'requester':requester,
                     'requested':requested,
+                    'friender':friender,
+                    'friended':friended,
                 }
                 return render(request, 'tabs/user_home.html', parameters)
 
@@ -125,6 +130,8 @@ def userHome(request):
             'groups':groups,
             'requester':requester,
             'requested':requested,
+            'friender':friender,
+            'friended':friended,
         }
         return render(request, 'tabs/user_home.html', parameters)
     else:
@@ -157,27 +164,36 @@ def groupHome(request, groupId):
         }
         return render(request, 'tabs/group_home.html', parameters)
 
-def sendRequest(request, username):
+def sendRequest(request, requested):
     if 'username' not in request.session:
         return redirect('login')
     else:
-        loggedIn = request.session['username']
-        currentUser = User.objects.get(username = loggedIn)
-        requestedUser = User.objects.get(username = username)
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        requestedUser = User.objects.get(username = requested)
         new_request = Request.objects.create(
             user = currentUser,
             requested = requestedUser,
         )
         return redirect('accounts')
 
-def acceptRequest(request, username):
-    if 'username' not in requesst.session:
+def acceptRequest(request, accepted):
+    if 'username' not in request.session:
         return redirect('login')
     else:
-        loggedIn = request.session['usesrname']
-        currentUser = User.objects.get(username = loggedIn)
-        requestedUser = User.objects.get(username = username)
-
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        acceptedUser = User.objects.get(username = accepted)
+        new_friend = Friend.objects.create(
+            user = currentUser,
+            friend = acceptedUser,
+            category = 1,
+            status = 1,
+        )
+        requests = Request.objects.filter(requested = currentUser).all()
+        for request in requests:
+            if request.user == acceptedUser.username:
+                request.delete()
         return redirect('accounts')
 
 # The view is g0ing to be used to create the group and add the information for the
@@ -428,6 +444,7 @@ def accounts(request):
     records = Record.objects.all()
     transactions = Transaction.objects.all()
     requests = Request.objects.all()
+    friends = Friend.objects.all()
     if 'username' in request.session:
         currentUser = request.session['username']
     else:
@@ -440,6 +457,7 @@ def accounts(request):
         'records':records,
         'transactions':transactions,
         'requests':requests,
+        'friends':friends,
     }
     return render(request, 'tabs/accounts.html', params)
     # return render(request, 'tabs/addMembers.html', params)

@@ -14,13 +14,24 @@
   {% if requester %}
   <h3>Pending Requests</h3>
     {% for request in requester %}
-      <p>{{ request.user }}</p>
+      <p>{{ request.requested.username }}</p>
     {% endfor %}
   {% endif %}
   {% if requested %}
   <h3>Friend Requests</h3>
     {% for request in requested %}
       <p>{{ request.user }}</p>
+    {% endfor %}
+  {% endif %}
+  <h3>Friends</h3>
+  {% if friender %}
+    {% for friend in friender %}
+      <p>{{ friend.friend.username }}</p>
+    {% endfor %}
+  {% endif %}
+  {% if friended %}
+    {% for friend in friended %}
+      <p>{{ friend.user }}</p>
     {% endfor %}
   {% endif %}
   <h3>Groups</h3>
