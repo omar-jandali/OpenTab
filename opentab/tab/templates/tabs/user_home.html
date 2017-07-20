@@ -37,7 +37,7 @@
   <h3>Groups</h3>
   <ul>
     {% for member in members %}
-      <li>{{ member.group.name }}</li>
+      <li>{{ member.group.id }} -- {{ member.group.name }}</li>
     {% endfor %}
   </ul>
 {% endblock %}

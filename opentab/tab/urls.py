@@ -9,8 +9,10 @@ urlpatterns = [
     url(r'^login$', views.login_page, name='login'),
     url(r'^signup$', views.signup, name='signup'),
     url(r'^logout$', views.logout_page, name='logout_page'),
+    url(r'^$', views.userHome, name='homePage'),
     url(r'^(?P<requested>[\w+]+)/sendRequest/$', views.sendRequest, name="sendRequest"),
     url(r'^(?P<accepted>[\w+]+)/acceptRequest/$', views.acceptRequest, name="acceptRequest"),
+    url(r'^(?P<groupId>[0-9]+)/home/$', views.groupHome, name='group_home'),
     url(r'^createGroup/$', views.createGroup, name='create_group'),
     # for this url, you will have to enter the group id and then add members to
     # the url. an example would be 127.0.0.1:8000/3/addMembers
@@ -27,6 +29,4 @@ urlpatterns = [
         views.addTransaction, name='add_transactions'),
     url(r'^accounts/$', views.accounts, name='accounts'),
     url(r'^accounts/delete$', views.accountsDelete, name='delete_accounts'),
-    url(r'^(?P<groupId>[0-9]+)/home/$', views.groupHome, name='group_home'),
-    url(r'^$', views.userHome, name='homePage')
 ]

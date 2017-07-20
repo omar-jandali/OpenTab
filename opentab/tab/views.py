@@ -265,24 +265,45 @@ def addMembers(request, groupId):
         for member in members:
             for group in groups:
                 if group.id == member.group.id:
-                    group = Group.object.get(id = group.id)
+                    group = Group.objects.get(id = group.id)
         users = User.objects.all()
+        friends = Friend.objects.all()
         # the form is similar to the form submition above for reference
         if request.method == "POST":
             # the following will scroll through every user in the users table
-            for user in users:
+            new_default_member = Member.objects.create(
+                user = currentUser,
+                group = group,
+                status = 1,
+            )
+            for friend in friends:
                 # it will then check to see if the usersname was returned in the request.
                 # if the username was checked, it will be returned, otherwise it will not
                 # be passed.
-                if user.username in request.POST:
-                    # user that is currently selected will be passed and then passed into
-                    # the new record that is created for every selected member
-                    selected_user = User.objects.get(username = user.username)
+                if friend.user == currentUser.username:
+                    selected_user = User.objects.get(username = friend.friend.username)
                     new_member = Member.objects.create(
                         user = selected_user,
                         group = group,
                         status = 1,
                     )
+                if friend.friend.username == currentUser.username:
+                    selected_user = User.objects.get(username = friend.user)
+                    print(selected_user)
+                    new_member = Member.objects.create(
+                        user = selected_user,
+                        group = group,
+                        status = 1,
+                    )
+                # if friend.username in request.POST:
+                #     # user that is currently selected will be passed and then passed into
+                #     # the new record that is created for every selected member
+                #     selected_user = User.objects.get(username = user.username)
+                #     new_member = Member.objects.create(
+                #         user = selected_user,
+                #         group = group,
+                #         status = 1,
+                #     )
                     # next three lines will keep track and updated the group count every time that
                     # a new user is added to the specific group that is selected.
                     updated_group = group
@@ -299,6 +320,8 @@ def addMembers(request, groupId):
                 'message':message,
                 'group':group,
                 'users':users,
+                'friends':friends,
+                'currentUser':currentUser,
             }
         return render(request, 'tabs/add_members.html', params)
 
@@ -354,7 +377,7 @@ def addRecord(request, groupId):
                                 user = selected_user,
                                 record = new_record,
                             )
-                        if new_recprd.split == 2:
+                        if new_record.split == 2:
                             new_transaction = Transaction.objects.create(
                                 amount = 0.00,
                                 description = 'expense',
