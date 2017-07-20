@@ -6,97 +6,136 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.forms import formset_factory
+from django.db.models import Q
 
 from random import randint
 
-from .models import Group, User, Member, Record, Transaction
+from .models import Group, User, Member, Record, Transaction, Request, Friend
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
-from .forms import SignupForm, LoginForm, EvenSplitTransactionForm, IndividualSplitTransactionForm
+from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
+from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm
 
 def signup(request):
-    if request.method == 'GET':
-        params = {}
-        return render(request, 'tab/signup.html', params)
-    else:
+    if request.method == 'POST':
         form = SignupForm(request.POST)
         if form.is_valid():
-            print('form validated')
-            f_name = form.cleaned_data['f_name']
-            l_name = form.cleaned_data['l_name']
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
-            email = form.cleaned_data['email']
-            user = User(first_name=f_name,
-                        last_name=l_name,
-                        username=username,
-                        email=email)
-            user.set_password(password)
-            user.save()
-            messages.add_message(request, messages.SUCCESS, 'Account Created!')
-            return redirect('login')
-        else:
-            print('form is not valid')
-            params = {}
-            params['form'] = form
-            return render(request, 'tab/signup.html', params)
-
+            cd = form.cleaned_data
+            username = cd['username']
+            password = cd['password']
+            verify = cd['verify']
+            email = cd['email']
+            if password == verify:
+                new_user = User.objects.create(
+                    username = username,
+                    password = password,
+                    email = email,
+                )
+                request.session['username'] = username
+                return redirect('accounts')
+            else:
+                message = 'Password and Verify dont match'
+                parameters = {
+                    'form':form,
+                    'message':message,
+                }
+                return render(request, 'tabs/signup.html', parameters)
+    else:
+        form = SignupForm()
+        message = 'Fill out the form'
+        parameters = {
+            'form':form,
+            'message':message,
+        }
+        return render(request, 'tabs/signup.html', parameters)
 
 def login_page(request):
-    if request.method == 'GET':
-        return render(request, 'tab/login.html')
-    else:
+    if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
-            if '@' in username:
-                u = User.objects.filter(email=username).first()
-                if u:
-                    user = authenticate(request, username=u.username, password=password)
-                else:
-                    user = None
-            else:
-                user = authenticate(request, username=username, password=password)
+            cd = form.cleaned_data
+            username = cd['username']
+            password = cd['password']
+            user = authenticate(username=username, password=password)
             if user:
-                login(request, user)
-                return redirect('logged_in')
-        print('no user')
-        context = {}
-        context['error'] = 'Username or password is incorrect'
-        return render(request, 'tab/login.html', context)
+                request.session['username'] = username
+                return redirect('homePage')
+            else:
+                message = 'invalid login info'
+                parameters = {
+                    'message':message,
+                    'form':form,
+                }
+            return render(request, 'tabs/login.html', parameters)
+    else:
+        form = LoginForm()
+        message = 'Login Below'
+        parameters = {
+            'form':form,
+            'message':message,
+        }
+        return render(request, 'tabs/login.html', parameters)
 
-
-@login_required
 def logout_page(request):
-    logout(request)
-    return redirect('login')
-
-
-@login_required
-def logged_in(request):
-    print('user is logged in')
-    s = "<h1>Logged in as {} {}</h1>".format(request.user.first_name, request.user.last_name)
-    s += "<br><a href='http://127.0.0.1:8000/logout'>logout</a>"
-    return HttpResponse(s)
+    if 'username' not in request.session:
+        return redirect('login')
+    else:
+        username = request.session['username']
+        request.session.pop('username')
+        return redirect('accounts')
 
 # The following view is what will be used to display all of the groups and informaiton
 # for the logged in user including groups balances and friends
 # Passed in var:
 #   name = the name of the user that is logged in
-def userHome(request, name):
-    # the database object for the user that is selected
-    currentUser = User.objects.get(username=name)
-    # this is used to grab all of the groups that the user is a part of
-    members = Member.objects.filter(user=currentUser).all()
-    # this is used to actually display the group info that the user is a part of
-    groups = Group.objects.all()
-    #these are all the parameters that need to be passed to the html tempalte
-    parameters = {
-        'currentUser':currentUser,
-        'members':members,
-        'groups':groups
-    }
-    return render(request, 'tabs/user_home.html', parameters)
+def userHome(request):
+    if 'username' in request.session:
+        username = request.session['username']
+        # the database object for the user that is selected
+        currentUser = User.objects.get(username=username)
+        # this is used to grab all of the groups that the user is a part of
+        members = Member.objects.filter(user=currentUser).all()
+        # the following are what will be used ot get all of the user requests
+        requester = Request.objects.filter(user = username).all()
+        requested = Request.objects.filter(requested = currentUser).all()
+        # the following are what will be used to grab all of your firends
+        friender = Friend.objects.filter(user = username).all()
+        friended = Friend.objects.filter(friend = currentUser).all()
+        # this is used to actually display the group info that the user is a part of
+        groups = Group.objects.all()
+        if request.method == "POST":
+            for searched in request.POST:
+                searched = request.POST['searched']
+                searchedUser = User.objects.get(username = searched)
+                if searchedUser == None:
+                    message = 'the username does not exist'
+                else:
+                    message = ''
+                parameters = {
+                    'currentUser':currentUser,
+                    'members':members,
+                    'groups':groups,
+                    'searchedUser':searchedUser,
+                    'message':message,
+                    'requester':requester,
+                    'requested':requested,
+                    'friender':friender,
+                    'friended':friended,
+                }
+                return render(request, 'tabs/user_home.html', parameters)
+
+        #these are all the parameters that need to be passed to the html tempalte
+        parameters = {
+            'currentUser':currentUser,
+            'members':members,
+            'groups':groups,
+            'requester':requester,
+            'requested':requested,
+            'friender':friender,
+            'friended':friended,
+        }
+        return render(request, 'tabs/user_home.html', parameters)
+    else:
+        return redirect('login')
 
 # The following is the view that will manage the groups profile. It will be the main
 # page that users will be able to use to find all of the different information
@@ -105,68 +144,107 @@ def userHome(request, name):
 # groupId = the id of the group that is selected (will be changed to the group name
 # later into the development)
 def groupHome(request, groupId):
-    # the following is the group object with the id that is passed in the url
-    group = Group.objects.get(id=groupId)
-    # the following are all of the members that are in the databse
-    members = Member.objects.all()
-    records = Record.objects.all()
-    #these are all the parameters that need to be passed to the html tempalte
-    parameters = {
-        'group':group,
-        'members':members,
-        'records':records,
-    }
-    return render(request, 'tabs/group_home.html', parameters)
+    if 'username' not in request.session:
+        return redirect('login')
+    else:
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        group = Member.objects.filter(user = currentUser).filter(group = groupId).first()
+        # the following is the group object with the id that is passed in the url
+        # group = Group.objects.get(name = groupName)
+        members = Member.objects.filter(group = group.group).all()
+        records = Record.objects.filter(group = group.group).all()
+        transactions = Transaction.objects.filter(group = group.group).all()
+        #these are all the parameters that need to be passed to the html tempalte
+        parameters = {
+            'members':members,
+            'records':records,
+            'group':group,
+            'transactions':transactions,
+        }
+        return render(request, 'tabs/group_home.html', parameters)
+
+def sendRequest(request, requested):
+    if 'username' not in request.session:
+        return redirect('login')
+    else:
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        requestedUser = User.objects.get(username = requested)
+        new_request = Request.objects.create(
+            user = currentUser,
+            requested = requestedUser,
+        )
+        return redirect('accounts')
+
+def acceptRequest(request, accepted):
+    if 'username' not in request.session:
+        return redirect('login')
+    else:
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        acceptedUser = User.objects.get(username = accepted)
+        new_friend = Friend.objects.create(
+            user = currentUser,
+            friend = acceptedUser,
+            category = 1,
+            status = 1,
+        )
+        requests = Request.objects.filter(requested = currentUser).all()
+        for request in requests:
+            if request.user == acceptedUser.username:
+                request.delete()
+        return redirect('accounts')
 
 # The view is g0ing to be used to create the group and add the information for the
 # group before creating the record in the database. It will also be incharge of adding
 # the first memeber to the group (the person who created the group).
-#
+
 #  will redirect to the adding memeber view (need to be fixed)
-def groups(request):
-    # the following is the user objectr of the person who is creating the group
-    user = User.objects.get(username='omar')
-    # following is all of th actions that are taken after the form is submitted
-    if request.method == 'POST':
-        # the following few lines will get the submitted form and create a reference
-        # code that is going to be used later.
-        # it will also assign the user that created the group
-        form = CreateGroupForm(request.POST)
-        referenceCode = generateReferenceNumber()
-        # the following validated the actual form to ensure that it was filled out
-        # with the correct inforamtion
-        if form.is_valid():
-            cd = form.cleaned_data
-            name = cd['name']
-            description = cd['description']
-            # the new_group creates an isntance of the new group and saved it into
-            # the database once it is created.
-            new_group = Group.objects.create(
-                name = name,
-                description = description,
-                reference_code = referenceCode,
-                created_by = user,
-            )
-            # the new_member instance is create and saaved that will add the first
-            # member of the group which is the person that created the group
-            # new_member = Member.objects.create(
-            #     user = user,
-            #     group = new_group,
-            #     status = 1,
-            # )
-            return redirect('/accounts')
-            #return redirect(reverse('add_members', args=[new_group.id]))
+def createGroup(request):
+    if 'username' not in request.session:
+        return redirect('login')
     else:
-        # the following is the storing of the forms
-        form = CreateGroupForm()
-        message = 'enter group info below'
-    # the following are all the objects that are going to be passed to the
-    # rendering remplate
-        parameters = {
-            'form':form,
-            'message':message,
-        }
-    return render(request, 'tabs/create_group.html', parameters)
+        currentUser = request.session['username']
+        # the following is the user objectr of the person who is creating the group
+        user = User.objects.get(username=currentUser)
+        # following is all of th actions that are taken after the form is submitted
+        if request.method == 'POST':
+            # the following few lines will get the submitted form and create a reference
+            # code that is going to be used later.
+            # it will also assign the user that created the group
+            form = CreateGroupForm(request.POST)
+            referenceCode = generateReferenceNumber()
+            # the following validated the actual form to ensure that it was filled out
+            # with the correct inforamtion
+            if form.is_valid():
+                cd = form.cleaned_data
+                name = cd['name']
+                description = cd['description']
+                # the new_group creates an isntance of the new group and saved it into
+                # the database once it is created.
+                new_group = Group.objects.create(
+                    name = name,
+                    description = description,
+                    reference_code = referenceCode,
+                    created_by = user,
+                )
+                #---------------------------------------------------------
+                # create a column that addes the person who created the group
+                #---------------------------------------------------------
+                return redirect('accounts')
+                #return redirect(reverse('add_members', args=[new_group.id]))
+        else:
+            # the following is the storing of the forms
+            form = CreateGroupForm()
+            message = 'enter group info below'
+        # the following are all the objects that are going to be passed to the
+        # rendering remplate
+            parameters = {
+                'form':form,
+                'message':message,
+            }
+        return render(request, 'tabs/create_group.html', parameters)
 
 # This view is what will add different members to the gorup that is selected. This
 # method will be in charge of not only adding the member to the group and keeping
@@ -175,110 +253,155 @@ def groups(request):
 # Passed in var:
 #   groupId - the id of the group that the memeber will be added to.
 def addMembers(request, groupId):
-    # the following two lines grab the users object for the current user as well as
-    # the group object related to the id that was passed in
-    currentUser = User.objects.get(username='omar')
-    group = Group.objects.get(id=groupId)
-    users = User.objects.all()
-    # the form is similar to the form submition above for reference
-    if request.method == "POST":
-        # the following will scroll through every user in the users table
-        for user in users:
-            # it will then check to see if the usersname was returned in the request.
-            # if the username was checked, it will be returned, otherwise it will not
-            # be passed.
-            if user.username in request.POST:
-                # user that is currently selected will be passed and then passed into
-                # the new record that is created for every selected member
-                selected_user = User.objects.get(username = user.username)
-                new_member = Member.objects.create(
-                    user = selected_user,
-                    group = group,
-                    status = 1,
-                )
-                # next three lines will keep track and updated the group count every time that
-                # a new user is added to the specific group that is selected.
-                updated_group = group
-                updated_group.count = updated_group.count + 1
-                updated_group.save()
-        return redirect('/accounts')
+    if 'username' not in request.session:
+        return redirect('login')
     else:
-        # the form that the user fills out will display all of the members of the
-        # app and the current user will select the checkbox next to the name
-        # of the user that he wants to add to the group. THIS WILL CHANGE TO DISPLAY
-        # FRIENDS AFTER THE FRIENDS MODEL AND FUNCTION ARE CREATED
-        message = 'add members below'
-        params = {
-            'message':message,
-            'group':group,
-            'users':users,
-        }
-    return render(request, 'tabs/add_members.html', params)
+        # the following two lines grab the users object for the current user as well as
+        # the group object related to the id that was passed in
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        groups = Group.objects.filter(id = groupId).all()
+        members = Member.objects.filter(user = currentUser).all()
+        for member in members:
+            for group in groups:
+                if group.id == member.group.id:
+                    group = Group.objects.get(id = group.id)
+        users = User.objects.all()
+        friends = Friend.objects.all()
+        # the form is similar to the form submition above for reference
+        if request.method == "POST":
+            # the following will scroll through every user in the users table
+            new_default_member = Member.objects.create(
+                user = currentUser,
+                group = group,
+                status = 1,
+            )
+            for friend in friends:
+                # it will then check to see if the usersname was returned in the request.
+                # if the username was checked, it will be returned, otherwise it will not
+                # be passed.
+                if friend.user == currentUser.username:
+                    selected_user = User.objects.get(username = friend.friend.username)
+                    new_member = Member.objects.create(
+                        user = selected_user,
+                        group = group,
+                        status = 1,
+                    )
+                if friend.friend.username == currentUser.username:
+                    selected_user = User.objects.get(username = friend.user)
+                    print(selected_user)
+                    new_member = Member.objects.create(
+                        user = selected_user,
+                        group = group,
+                        status = 1,
+                    )
+                # if friend.username in request.POST:
+                #     # user that is currently selected will be passed and then passed into
+                #     # the new record that is created for every selected member
+                #     selected_user = User.objects.get(username = user.username)
+                #     new_member = Member.objects.create(
+                #         user = selected_user,
+                #         group = group,
+                #         status = 1,
+                #     )
+                    # next three lines will keep track and updated the group count every time that
+                    # a new user is added to the specific group that is selected.
+                    updated_group = group
+                    updated_group.count = updated_group.count + 1
+                    updated_group.save()
+            return redirect('/accounts')
+        else:
+            # the form that the user fills out will display all of the members of the
+            # app and the current user will select the checkbox next to the name
+            # of the user that he wants to add to the group. THIS WILL CHANGE TO DISPLAY
+            # FRIENDS AFTER THE FRIENDS MODEL AND FUNCTION ARE CREATED
+            message = 'add members below'
+            params = {
+                'message':message,
+                'group':group,
+                'users':users,
+                'friends':friends,
+                'currentUser':currentUser,
+            }
+        return render(request, 'tabs/add_members.html', params)
 
 # This view is what will be in charge of adding the different types of records to
 # the group and keeping track of all the expense amounts and dealing with the splitting
 # of the expense.
 def addRecord(request, groupId):
-    # for the records, the user and group need to be provided to know what group
-    # this record is attached to and who created the record.
-    user = User.objects.get(username='omar')
-    group = Group.objects.get(id=groupId)
-    members = Member.objects.filter(group=groupId)
-    # the followin process is similar to the form validation for the group view.
-    if request.method == 'POST':
-        message = 'process'
-        form = AddRecordForm(request.POST)
-        # the following will take the form that is based on the records model in the
-        # forms.py file. It will only process the split port on the html file.
-        # The record members will be processed below.
-        if form.is_valid():
-            cd = form.cleaned_data
-            print(cd)
-            split = cd['split']
-            new_record = Record.objects.create(
-                split = split,
-                count = 0,
-                status = 1,
-                group = group,
-                user = user,
-            )
-            # the following will take all of the members in the group and for each
-            # member, it will go through and check to see if the if the checkbox
-            # for the specific user is selected.
-            for member in members:
-                # if the user was selected, then the username would appear in the
-                # POST request. If the user was not selected, it would not appear
-                # in the POST request.
-                if member.user.username in request.POST:
-                    # if the member is in the request, it will find the members user
-                    # recor in the database and use it to create the new transaciton
-                    # history.
-                    selected_user = User.objects.get(username = member.user.username)
-                    # this is the new transaction record.
-                    new_transaction = Transaction.objects.create(
-                        amount = 0.00,
-                        description = 'description',
-                        group = group,
-                        user = selected_user,
-                        record = new_record,
-                    )
-                    update_record = new_record
-                    update_record.count = update_record.count + 1
-                    update_record.save()
-            return redirect('/accounts')
-
+    if 'username' not in request.session:
+        return redirect('login')
     else:
-        # the only tyhing that needed to be passed was the group to display the naem
-        # and the form that is going to be used and filled out by the user and submitted
-        form = AddRecordForm()
-        message = 'no processing'
-        params = {
-            'group':group,
-            'members':members,
-            'form':form,
-            'message':message,
-        }
-    return render(request, 'tabs/add_records.html', params)
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        selectedGroup = Member.objects.filter(user = currentUser).filter(group = groupId).first()
+        group = Group.objects.get(id = selectedGroup.group.id)
+        members = Member.objects.filter(group=group)
+        # the followin process is similar to the form validation for the group view.
+        if request.method == 'POST':
+            message = 'process'
+            form = AddRecordForm(request.POST)
+            # the following will take the form that is based on the records model in the
+            # forms.py file. It will only process the split port on the html file.
+            # The record members will be processed below.
+            if form.is_valid():
+                cd = form.cleaned_data
+                split = cd['split']
+                description = cd['description']
+                new_record = Record.objects.create(
+                    description = description,
+                    split = split,
+                    count = 0,
+                    status = 1,
+                    group = group,
+                    user = currentUser,
+                )
+                # the following will take all of the members in the group and for each
+                # member, it will go through and check to see if the if the checkbox
+                # for the specific user is selected.
+                for member in members:
+                    # if the user was selected, then the username would appear in the
+                    # POST request. If the user was not selected, it would not appear
+                    # in the POST request.
+                    if member.user.username in request.POST:
+                        # if the member is in the request, it will find the members user
+                        # recor in the database and use it to create the new transaciton
+                        # history.
+                        selected_user = User.objects.get(username = member.user.username)
+                        # this is the new transaction record.
+                        if new_record.split == 1:
+                            new_transaction = Transaction.objects.create(
+                                amount = 0.00,
+                                description = description,
+                                group = group,
+                                user = selected_user,
+                                record = new_record,
+                            )
+                        if new_record.split == 2:
+                            new_transaction = Transaction.objects.create(
+                                amount = 0.00,
+                                description = 'expense',
+                                group = group,
+                                user = selected_user,
+                                record = new_record,
+                            )
+                        update_record = new_record
+                        update_record.count = update_record.count + 1
+                        update_record.save()
+                return redirect('/accounts')
+
+        else:
+            # the only tyhing that needed to be passed was the group to display the naem
+            # and the form that is going to be used and filled out by the user and submitted
+            form = AddRecordForm()
+            message = 'no processing'
+            params = {
+                'group':group,
+                'members':members,
+                'form':form,
+                'message':message,
+            }
+        return render(request, 'tabs/add_records.html', params)
 
 # This is the view that is going to be manage the creation of different
 # transactions that are going to be used to track how much money each person is
@@ -343,12 +466,21 @@ def accounts(request):
     users = User.objects.all()
     records = Record.objects.all()
     transactions = Transaction.objects.all()
+    requests = Request.objects.all()
+    friends = Friend.objects.all()
+    if 'username' in request.session:
+        currentUser = request.session['username']
+    else:
+        currentUser = ''
     params = {
+        'currentUser':currentUser,
         'groups':groups,
         'members':members,
         'users':users,
         'records':records,
         'transactions':transactions,
+        'requests':requests,
+        'friends':friends,
     }
     return render(request, 'tabs/accounts.html', params)
     # return render(request, 'tabs/addMembers.html', params)

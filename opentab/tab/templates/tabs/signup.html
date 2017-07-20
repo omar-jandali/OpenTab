@@ -1,37 +1,13 @@
-{% extends "tab/base.html" %}
+{% extends "base.html" %}
 
 {% block content %}
 
     <h1>Signup</h1>
-    {{form.errors}}
+    <p>{{ message }}</p>
     <form method="POST">
-        <div class="form-group">
-            <label for="exampleInputEmail1">First Name</label>
-            <input type="text" class="form-control" name="f_name">
-        </div>
-        <div class="form-group">
-            <label for="exampleInputPassword1">Last Name</label>
-            <input type="text" class="form-control" name="l_name">
-        </div>
-        <div class="form-group">
-            <label for="exampleInputEmail1">Username</label>
-            <input type="text" class="form-control" name="username">
-        </div>
-        <div class="form-group">
-            <label for="exampleInputPassword1">Password</label>
-            <input type="password" class="form-control" name="password">
-        </div>
-        <div class="form-group">
-            <label for="exampleInputEmail1">Verify Password</label>
-            <input type="password" class="form-control" name="verify">
-        </div>
-        <div class="form-group">
-            <label for="exampleInputPassword1">Email Address</label>
-            <input type="email" class="form-control" name="email">
-        </div>
-
-        <button type="submit" class="btn btn-default">Sign Up</button>
-        {% csrf_token %}
+      {% csrf_token %}
+      {{ form.as_p }}
+      <input type="submit" name="submit" value="submit">
     </form>
 
 {% endblock %}

@@ -2,13 +2,42 @@
 
 {% block content %}
   <h2>{{ currentUser.username }}</h2>
+  <form action="" method="POST">
+    {% csrf_token %}
+    <input type="text" name="searched">
+    <input type="submit" name="submit" value="submit">
+  </form>
+  <h3>{{ message }}</h3>
+  {% if searchedUser %}
+    <p>{{ searchedUser }}</p>
+  {% endif %}
+  {% if requester %}
+  <h3>Pending Requests</h3>
+    {% for request in requester %}
+      <p>{{ request.requested.username }}</p>
+    {% endfor %}
+  {% endif %}
+  {% if requested %}
+  <h3>Friend Requests</h3>
+    {% for request in requested %}
+      <p>{{ request.user }}</p>
+    {% endfor %}
+  {% endif %}
+  <h3>Friends</h3>
+  {% if friender %}
+    {% for friend in friender %}
+      <p>{{ friend.friend.username }}</p>
+    {% endfor %}
+  {% endif %}
+  {% if friended %}
+    {% for friend in friended %}
+      <p>{{ friend.user }}</p>
+    {% endfor %}
+  {% endif %}
+  <h3>Groups</h3>
   <ul>
     {% for member in members %}
-      {% for group in groups %}
-        {% if group.reference_code == member.group_reference %}
-          <li><a href="">{{ group.name }}</a></li>
-        {% endif %}
-      {% endfor %}
+      <li>{{ member.group.id }} -- {{ member.group.name }}</li>
     {% endfor %}
   </ul>
 {% endblock %}

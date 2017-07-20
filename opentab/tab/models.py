@@ -31,10 +31,10 @@ RECORD_STATUS_CHOICES = (
 )
 
 NOTIFICATION_CATEGORY_CHOICES = (
-    ('0', 'group'),
-    ('1', 'record'),
-    ('2', 'request'),
-    ('3', 'friend'),
+    ('1', 'group'),
+    ('2', 'record'),
+    ('3', 'request'),
+    ('4', 'friend'),
 )
 
 NOTIFICATION_STATUS_CHOICES = {
@@ -42,9 +42,9 @@ NOTIFICATION_STATUS_CHOICES = {
     ('2', 'read'),
 }
 
-PROFILE_PUBLIC_CHOICES = {
-        ('1', 'public'),
-        ('2', 'private'),
+PROFILE_PRIVACY_CHOICES = {
+    ('1', 'public'),
+    ('2', 'private'),
 }
 
 class Request(models.Model):
@@ -75,6 +75,7 @@ class Member(models.Model):
     created = models.DateTimeField(auto_now_add=True) #server
 
 class Record(models.Model):
+    description = models.CharField(max_length=20, default='group expense')
     split = models.SmallIntegerField(default=1) #user
     count = models.IntegerField(default=0)
     status = models.SmallIntegerField(choices=RECORD_STATUS_CHOICES, default=1) #server
@@ -105,10 +106,8 @@ class Notification(models.Model):
 
 class Profile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # server
-    pic = models.ImageField()  # Update with options
+    age = models.IntegerField(default=0)
     city = models.CharField(max_length=45)  # user
-    state = models.CharField(max_length=45)  # user
-    phone = models.BigIntegerField()  # user
-    dob = models.DateField()  # user
-    public = models.SmallIntegerField(choices=PROFILE_PUBLIC_CHOICES, default=1)  # user
+    phone = models.BigIntegerField(default=0)  # user
+    privacy = models.SmallIntegerField(choices=PROFILE_PRIVACY_CHOICES, default=1)  # user
     created = models.DateTimeField(auto_now_add=True)  # server
