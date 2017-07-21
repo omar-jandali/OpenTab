@@ -11,8 +11,13 @@
     <p>{{ record.description }}</p>
     {% for trans in transactions %}
       {% if trans.record.id == record.id %}
-        <p>{{ trans.user.username }}, {{ trans.amount }}</p>
+        <p>{{ trans.user.username }}, {{ trans.amount }}, {{ trans.description }}</p>
       {% endif %}
     {% endfor %}
   {% endfor %}
+  <p>
+    <a href="{% url 'add_record' group.group.id %}">
+      new record
+    </a>
+  </p>
 {% endblock %}

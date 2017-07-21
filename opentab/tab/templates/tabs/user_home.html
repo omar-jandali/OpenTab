@@ -2,6 +2,7 @@
 
 {% block content %}
   <h2>{{ currentUser.username }}</h2>
+  <h3><a href="{% url 'accounts' %}">accounts</a></h3>
   <form action="" method="POST">
     {% csrf_token %}
     <input type="text" name="searched">
@@ -9,18 +10,31 @@
   </form>
   <h3>{{ message }}</h3>
   {% if searchedUser %}
-    <p>{{ searchedUser }}</p>
+    {{ searchedUser }}
+    <a href="{% url 'send_request' searchedUser.username %}">
+      send reqest
+    </a>
   {% endif %}
   {% if requester %}
   <h3>Pending Requests</h3>
     {% for request in requester %}
-      <p>{{ request.requested.username }}</p>
+      <p>
+        {{ request.requested.username }}
+        <a href="{% url 'accept_request' request.requested.username %}">
+          accept request
+        </a>
+      </p>
     {% endfor %}
   {% endif %}
   {% if requested %}
   <h3>Friend Requests</h3>
     {% for request in requested %}
-      <p>{{ request.user }}</p>
+      <p>
+        {{ request.user }}
+        <a href="{% url 'accept_request' request.user %}">
+          accept request
+        </a>
+      </p>
     {% endfor %}
   {% endif %}
   <h3>Friends</h3>
@@ -37,7 +51,18 @@
   <h3>Groups</h3>
   <ul>
     {% for member in members %}
-      <li>{{ member.group.id }} -- {{ member.group.name }}</li>
+      <li>
+        <a href="{% url 'group_home' member.group.id %}">
+          {{ member.group.id }} -- {{ member.group.name }}
+        </a>
+      </li>
     {% endfor %}
+    <li>
+      <a href="{% url 'create_group' %}">
+        new group
+      </a>
+    </li>
   </ul>
+
+  <a href="{% url 'logout' %}">Logout</a>
 {% endblock %}

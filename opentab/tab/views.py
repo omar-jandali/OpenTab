@@ -81,7 +81,7 @@ def logout_page(request):
     else:
         username = request.session['username']
         request.session.pop('username')
-        return redirect('accounts')
+        return redirect('login')
 
 # The following view is what will be used to display all of the groups and informaiton
 # for the logged in user including groups balances and friends
@@ -232,7 +232,8 @@ def createGroup(request):
                 #---------------------------------------------------------
                 # create a column that addes the person who created the group
                 #---------------------------------------------------------
-                return redirect('accounts')
+                return redirect('add_members', groupId=new_group.id)
+                #return redirect('accounts')
                 #return redirect(reverse('add_members', args=[new_group.id]))
         else:
             # the following is the storing of the forms
@@ -309,7 +310,7 @@ def addMembers(request, groupId):
                     updated_group = group
                     updated_group.count = updated_group.count + 1
                     updated_group.save()
-            return redirect('/accounts')
+            return redirect('group_home', groupId=group.id)
         else:
             # the form that the user fills out will display all of the members of the
             # app and the current user will select the checkbox next to the name
@@ -388,7 +389,7 @@ def addRecord(request, groupId):
                         update_record = new_record
                         update_record.count = update_record.count + 1
                         update_record.save()
-                return redirect('/accounts')
+                return redirect('add_transactions', groupId=group.id, recordId=new_record.id)
 
         else:
             # the only tyhing that needed to be passed was the group to display the naem
@@ -424,7 +425,7 @@ def addTransaction(request, groupId, recordId):
                         trans.description = description
                         trans.amount = split_amount
                         trans.save()
-                return redirect('accounts')
+                return redirect('group_home', groupId=group.id)
         if record.split == 2:
             form = IndividualSplitTransactionForm(request.POST, request.FILES)
         return redirect('accounts')
