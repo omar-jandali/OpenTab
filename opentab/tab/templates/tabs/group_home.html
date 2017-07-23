@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
+<h3>
+  <a href="{% url 'home_page' %}">Home</a>
+</h3>
   <h2>{{ group.group.name }}</h2>
   <h3>members</h3>
   {% for member in members %}

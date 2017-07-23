@@ -105,23 +105,53 @@ def userHome(request):
         if request.method == "POST":
             for searched in request.POST:
                 searched = request.POST['searched']
-                searchedUser = User.objects.get(username = searched)
-                if searchedUser == None:
-                    message = 'the username does not exist'
-                else:
-                    message = ''
-                parameters = {
-                    'currentUser':currentUser,
-                    'members':members,
-                    'groups':groups,
-                    'searchedUser':searchedUser,
-                    'message':message,
-                    'requester':requester,
-                    'requested':requested,
-                    'friender':friender,
-                    'friended':friended,
-                }
-                return render(request, 'tabs/user_home.html', parameters)
+                users = User.objects.all()
+                for user in users:
+                    if searched == user.username:
+                        searchedUser = user
+                        message = 'results for: ' + searched
+                        parameters = {
+                            'currentUser':currentUser,
+                            'members':members,
+                            'groups':groups,
+                            'searchedUser':searchedUser,
+                            'message':message,
+                            'requester':requester,
+                            'requested':requested,
+                            'friender':friender,
+                            'friended':friended,
+                        }
+                        return render(request, 'tabs/user_home.html', parameters)
+                    else:
+                        message = 'the user does not exist'
+                        parameters = {
+                            'currentUser':currentUser,
+                            'members':members,
+                            'groups':groups,
+                            'message':message,
+                            'requester':requester,
+                            'requested':requested,
+                            'friender':friender,
+                            'friended':friended,
+                        }
+                        return render(request, 'tabs/user_home.html', parameters)
+                # searchedUser = User.objects.get(username = searched)
+                # if searchedUser == None:
+                #     message = 'the username does not exist'
+                # else:
+                #     message = ''
+                # parameters = {
+                #     'currentUser':currentUser,
+                #     'members':members,
+                #     'groups':groups,
+                #     'searchedUser':searchedUser,
+                #     'message':message,
+                #     'requester':requester,
+                #     'requested':requested,
+                #     'friender':friender,
+                #     'friended':friended,
+                # }
+                # return render(request, 'tabs/user_home.html', parameters)
 
         #these are all the parameters that need to be passed to the html tempalte
         parameters = {
