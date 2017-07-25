@@ -38,7 +38,7 @@
   <h3>transactions</h3>
   {% for transaction in transactions %}
   <p>ID:{{ transaction.id }}, USER:{{ transaction.user.username }},
-    AMOUNT:{{ transaction.amount }}, DESCRIPTION:{{ transaction.description }},GROUP:{{ transaction.group.name }},
+    AMOUNT:{{ transaction.amount }}, DESCRIPTION:{{ transaction.description }},GROUP:{{ transaction.group.id }},
     RECORD:{{ transaction.record.id }}, CREATED:{{ transaction.created }}</p>
   {% endfor %}
 {% endblock %}

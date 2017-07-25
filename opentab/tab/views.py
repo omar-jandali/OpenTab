@@ -15,6 +15,7 @@ from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactio
 from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
 from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm
 
+
 def signup(request):
     if request.method == 'POST':
         form = SignupForm(request.POST)
@@ -58,7 +59,7 @@ def login_page(request):
             user = authenticate(username=username, password=password)
             if user:
                 request.session['username'] = username
-                return redirect('homePage')
+                return redirect('home_page')
             else:
                 message = 'invalid login info'
                 parameters = {
@@ -109,7 +110,7 @@ def userHome(request):
                 for user in users:
                     if searched == user.username:
                         searchedUser = user
-                        message = 'results for: ' + searched
+                        message = 'results for: ' + user.username
                         parameters = {
                             'currentUser':currentUser,
                             'members':members,
@@ -134,36 +135,18 @@ def userHome(request):
                             'friender':friender,
                             'friended':friended,
                         }
-                        return render(request, 'tabs/user_home.html', parameters)
-                # searchedUser = User.objects.get(username = searched)
-                # if searchedUser == None:
-                #     message = 'the username does not exist'
-                # else:
-                #     message = ''
-                # parameters = {
-                #     'currentUser':currentUser,
-                #     'members':members,
-                #     'groups':groups,
-                #     'searchedUser':searchedUser,
-                #     'message':message,
-                #     'requester':requester,
-                #     'requested':requested,
-                #     'friender':friender,
-                #     'friended':friended,
-                # }
-                # return render(request, 'tabs/user_home.html', parameters)
-
-        #these are all the parameters that need to be passed to the html tempalte
-        parameters = {
-            'currentUser':currentUser,
-            'members':members,
-            'groups':groups,
-            'requester':requester,
-            'requested':requested,
-            'friender':friender,
-            'friended':friended,
-        }
-        return render(request, 'tabs/user_home.html', parameters)
+                return render(request, 'tabs/user_home.html', parameters)
+        else:
+            parameters = {
+                'currentUser':currentUser,
+                'members':members,
+                'groups':groups,
+                'requester':requester,
+                'requested':requested,
+                'friender':friender,
+                'friended':friended,
+            }
+            return render(request, 'tabs/user_home.html', parameters)
     else:
         return redirect('login')
 
@@ -438,54 +421,72 @@ def addRecord(request, groupId):
 # transactions that are going to be used to track how much money each person is
 # paying for each record
 def addTransaction(request, groupId, recordId):
-    user = User.objects.get(username='omar')
-    group = Group.objects.get(id=groupId)
-    record = Record.objects.get(id=recordId)
-    transactions = Transaction.objects.all()
-    if request.method == 'POST':
-        if record.split == 1:
-            form = EvenSplitTransactionForm(request.POST)
-            if form.is_valid():
-                cd = form.cleaned_data
-                amount = cd['amount']
-                description = cd['description']
-                split_amount = SplitEven(record, amount)
-                for trans in transactions:
-                    if trans.record.id == record.id:
-                        trans.description = description
-                        trans.amount = split_amount
-                        trans.save()
-                return redirect('group_home', groupId=group.id)
-        if record.split == 2:
-            form = IndividualSplitTransactionForm(request.POST, request.FILES)
-        return redirect('accounts')
-        #--------------------------------------------------------
+    if 'username' not in request.session:
+        return redirect('login')
     else:
-        if record.split == 1:
-            form = EvenSplitTransactionForm()
-            message = 'fill out the form below'
-            parameters = {
-                'record':record,
-                'form':form,
-                'message':message,
-                'transactions':transactions,
-            }
-            return render(request, 'tabs/add_even_transactions.html', parameters)
-        if record.split == 2:
-            message = 'fill out the form below'
-            TransFormSet = formset_factory(IndividualSplitTransactionForm, extra=3)
-            # for trans in transactions:
-            #     if trans.record.id == record.id:
-            #         print(trans.user.username)
-            #         form = IndividualSplitTransactionForm(prefix=trans.user.username)
-            #         print(form)
-            parameters = {
-                'record':record,
-                'TransFormSet':TransFormSet,
-                'message':message,
-                'transactions':transactions,
-            }
-            return render(request, 'tabs/add_individual_transaction.html', parameters)
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        group = Group.objects.get(id=groupId)
+        record = Record.objects.get(id=recordId)
+        transCount = Transaction.objects.filter(record=recordId).all().count()
+        transactions = Transaction.objects.filter(record=recordId).all()
+        SplitFormSet = formset_factory(IndividualSplitTransactionForm, extra=transCount)
+        if request.method == 'POST':
+            if record.split == 1:
+                form = EvenSplitTransactionForm(request.POST)
+                if form.is_valid():
+                    cd = form.cleaned_data
+                    amount = cd['amount']
+                    description = cd['description']
+                    split_amount = SplitEven(record, amount)
+                    for trans in transactions:
+                        if trans.record.id == record.id:
+                            trans.description = description
+                            trans.amount = split_amount
+                            trans.save()
+                    return redirect('group_home', groupId=group.id)
+            if record.split == 2:
+                formset = SplitFormSet(request.POST)
+                if formset.is_valid():
+                    i=0
+                    for form in formset:
+                        cd = form.cleaned_data
+                        currentAmount = cd['amount']
+                        currentDescription = cd['description']
+                        print(currentAmount)
+                        print(currentDescription)
+                        currentTrans = transactions[i]
+                        currentTrans.amount = currentAmount
+                        currentTrans.description = currentDescription
+                        currentTrans.save()
+                        print(currentTrans)
+                        i = i + 1
+                        #---------------------------------
+                        # this is where I want to iterate through the query results and
+                        # assign the correct appropriate inutes to the appropriate user
+                        #---------------------------------
+            return redirect('accounts')
+        else:
+            if record.split == 1:
+                form = EvenSplitTransactionForm()
+                message = 'fill out the form below'
+                parameters = {
+                    'record':record,
+                    'form':form,
+                    'message':message,
+                    'transactions':transactions,
+                }
+                return render(request, 'tabs/add_even_transactions.html', parameters)
+            if record.split == 2:
+                print(SplitFormSet)
+                message = 'message'
+                parameters = {
+                    'record':record,
+                    'SplitFormSet':SplitFormSet,
+                    'message':message,
+                    'transactions':transactions,
+                }
+                return render(request, 'tabs/add_individual_transaction.html', parameters)
 
 # this is just a view that is used to display all of the differnet accounts and
 # information that is stored in the database.

@@ -7,9 +7,13 @@
   {% endif %}
   <form action="." method="POST">
     {% csrf_token %}
-    <table>
-      {{ TransFormSet }}
-    </table>
+    {{ SplitFormSet.management_form }}
+    {% i = 0 %}
+    {% for form in SplitFormSet %}
+      {{ transactions[i] }}
+      {{ form.as_p }}
+      {% i = i + 1 %}
+    {% endfor %}
     <p>Tax: <input type="text" name="tax" value=""></p>
     <p>Tip: <input type="text" name="tip" value=""></p>
     <input type="submit" name="submit" value="submit">
