@@ -43,7 +43,7 @@ def signup(request):
                 # created in to the session so that the app can track the user that
                 # is logged in
                 request.session['username'] = username
-                return redirect('accounts')
+                return redirect('profile_setup')
             else:
                 # if password and verification dont match, a message will be sent
                 # back to the user so they can fill in the correct info.
