@@ -14,7 +14,7 @@ from decimal import Decimal
 from .models import Group, User, Member, Record, Transaction, Request, Friend
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
 from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
-from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm
+from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm, ProfileForm
 
 # The signup method is where all of the processing and display of the users signup
 # screen. The form asks for username, password, verify the password, and the email

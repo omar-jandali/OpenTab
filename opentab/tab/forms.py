@@ -19,6 +19,11 @@ class SignupForm(forms.Form):
     verify = forms.CharField(max_length=16, widget=forms.PasswordInput)
     email = forms.EmailField(max_length=50)
 
+class ProfileForm(form.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['age', 'city', 'phone', 'privacy']
+
 class CreateGroupForm(forms.ModelForm):
     class Meta:
         model = Group
