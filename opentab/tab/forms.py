@@ -3,7 +3,7 @@
 # that i think need to be created are the following...
 from django import forms
 from django.forms import ModelForm
-from tab.models import Group, Member, Record, Transaction
+from tab.models import Group, Member, Record, Transaction, Profile
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -19,7 +19,12 @@ class SignupForm(forms.Form):
     verify = forms.CharField(max_length=16, widget=forms.PasswordInput)
     email = forms.EmailField(max_length=50)
 
-class ProfileForm(form.ModelForm):
+class ProfileForm(forms.ModelForm):
+    split_choices = (('1', 'public'),
+                     ('2', 'private'))
+    privacy = forms.TypedChoiceField(
+        choices=split_choices, widget=forms.RadioSelect, coerce=int
+    )
     class Meta:
         model = Profile
         fields = ['age', 'city', 'phone', 'privacy']

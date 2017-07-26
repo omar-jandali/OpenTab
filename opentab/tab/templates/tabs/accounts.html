@@ -11,6 +11,11 @@
   {% for user in users %}
     <p>{{ user.username }} -- {{ user.password }}</p>
   {% endfor %}
+  <h3>Profiles</h3>
+  {% for profile in profiles %}
+    <p>{{ profile.user.username }}, {{ profile.age }}, {{ profile.city }}, {{ profile.phone }}
+    {{ profile.privacy }}</p>
+  {% endfor %}
   <h3>Requests</h3>
   {% for request in requests %}
     <p>{{ request.user }}, {{ request.requested }}, {{ request.created }}</p>
