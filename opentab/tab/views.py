@@ -9,6 +9,7 @@ from django.forms import formset_factory
 from django.db.models import Q
 
 from random import randint
+from decimal import Decimal
 
 from .models import Group, User, Member, Record, Transaction, Request, Friend
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
@@ -429,6 +430,7 @@ def addTransaction(request, groupId, recordId):
         group = Group.objects.get(id=groupId)
         record = Record.objects.get(id=recordId)
         transCount = Transaction.objects.filter(record=recordId).all().count()
+        print(transCount)
         transactions = Transaction.objects.filter(record=recordId).all()
         SplitFormSet = formset_factory(IndividualSplitTransactionForm, extra=transCount)
         if request.method == 'POST':
@@ -447,16 +449,29 @@ def addTransaction(request, groupId, recordId):
                     return redirect('group_home', groupId=group.id)
             if record.split == 2:
                 formset = SplitFormSet(request.POST)
+                if 'tax' in request.POST:
+                    tax = request.POST['tax']
+                    amount = Decimal(tax)
+                    taxSplit = SplitEven(record, amount)
+                else:
+                    taxSplit = 0
+                if 'tip' in request.POST:
+                    tip = request.POST['tip']
+                    amount = Decimal(tip)
+                    tipSplit = SplitEven(record, amount)
+                else:
+                    tipSplit = 0
                 if formset.is_valid():
                     i=0
                     for form in formset:
                         cd = form.cleaned_data
                         currentAmount = cd['amount']
                         currentDescription = cd['description']
+                        finalAmount = currentAmount + taxSplit + tipSplit
                         print(currentAmount)
                         print(currentDescription)
                         currentTrans = transactions[i]
-                        currentTrans.amount = currentAmount
+                        currentTrans.amount = finalAmount
                         currentTrans.description = currentDescription
                         currentTrans.save()
                         print(currentTrans)
@@ -538,7 +553,12 @@ def generateReferenceNumber():
 
 def SplitEven(record, amount):
     record_count = record.count
+    print(type(record_count))
+    print(record_count)
+    print(type(amount))
+    print(amount)
     split_amount = amount/record_count
+    print(split_amount)
     rounded_amount = round(split_amount, 2)
     print (record_count)
     print (amount)
