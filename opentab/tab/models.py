@@ -109,5 +109,5 @@ class Profile(models.Model):
     age = models.IntegerField(default=0)
     city = models.CharField(max_length=45)  # user
     phone = models.BigIntegerField(default=0)  # user
-    privacy = models.SmallIntegerField(choices=PROFILE_PRIVACY_CHOICES, default=1)  # user
+    privacy = models.SmallIntegerField(default=1)  # user
     created = models.DateTimeField(auto_now_add=True)  # server

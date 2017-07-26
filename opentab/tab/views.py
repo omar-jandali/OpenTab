@@ -11,7 +11,7 @@ from django.db.models import Q
 from random import randint
 from decimal import Decimal
 
-from .models import Group, User, Member, Record, Transaction, Request, Friend
+from .models import Group, User, Member, Record, Transaction, Request, Friend, Profile
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
 from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
 from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm, ProfileForm
@@ -114,6 +114,43 @@ def logout_page(request):
         username = request.session['username']
         request.session.pop('username')
         return redirect('login')
+
+def profile_setup(request):
+    if 'username' not in request.session:
+        return redirect('login')
+    else:
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        if request.method == 'POST':
+            form = ProfileForm(request.POST)
+            print(form)
+            if form.is_valid():
+                cd = form.cleaned_data
+                age = cd['age']
+                print(age)
+                city = cd['city']
+                print(city)
+                phone = cd['phone']
+                print(phone)
+                privacy = cd['privacy']
+                print(privacy)
+                new_profile = Profile.objects.create(
+                    user = currentUser,
+                    age = age,
+                    city = city,
+                    phone = phone,
+                    privacy = privacy,
+                )
+                return redirect('accounts')
+        else:
+            form = ProfileForm()
+            message = 'fill out form below'
+            parameters = {
+                'form':form,
+                'currentUser':currentUser,
+                'message':message,
+            }
+            return render(request, 'tabs/profile_setup.html', parameters)
 
 # The following view is what will be used to display all of the groups and informaiton
 # for the logged in user including groups balances and friends
@@ -384,6 +421,7 @@ def addMembers(request, groupId):
                         user = selected_user,
                         group = group,
                         status = 1,
+                    )
                     # next three lines will keep track and updated the group count every time that
                     # a new user is added to the specific group that is selected.
                     updated_group = group
@@ -652,6 +690,7 @@ def accounts(request):
     transactions = Transaction.objects.all()
     requests = Request.objects.all()
     friends = Friend.objects.all()
+    profiles = Profile.objects.all()
     if 'username' in request.session:
         currentUser = request.session['username']
     else:
@@ -665,6 +704,7 @@ def accounts(request):
         'transactions':transactions,
         'requests':requests,
         'friends':friends,
+        'profiles':profiles,
     }
     return render(request, 'tabs/accounts.html', params)
     # return render(request, 'tabs/addMembers.html', params)

@@ -9,6 +9,7 @@ urlpatterns = [
     url(r'^login$', views.login_page, name='login'),
     url(r'^signup$', views.signup, name='signup'),
     url(r'^logout$', views.logout_page, name='logout'),
+    url(r'^setup_profile/$', views.profile_setup, name='profile_setup'),
     url(r'^$', views.userHome, name='home_page'),
     url(r'^(?P<requested>[\w+]+)/sendRequest/$', views.sendRequest, name="send_request"),
     url(r'^(?P<accepted>[\w+]+)/acceptRequest/$', views.acceptRequest, name="accept_request"),
