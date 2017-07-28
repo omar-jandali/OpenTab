@@ -91,6 +91,13 @@ class Transaction(models.Model):
     record = models.ForeignKey(Record, default=1, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
 
+class UserBalance(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    amount = models.DecimalField(decimal_places=2, max_digits=9, default=0)
+    memo = models.CharField(max_length=200, default='money transfer')
+    activity = models.SmallIntegerField(default=1)
+    created = models.DateTimeField(auto_now_add=True)
+
 class Activity(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE) #server
     group = models.ForeignKey(Group, on_delete=models.CASCADE) #server

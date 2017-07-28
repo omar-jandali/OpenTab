@@ -15,6 +15,7 @@ from .models import Group, User, Member, Record, Transaction, Request, Friend, P
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
 from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
 from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm, ProfileForm
+from .forms import UserBalance
 
 # The signup method is where all of the processing and display of the users signup
 # screen. The form asks for username, password, verify the password, and the email
@@ -114,43 +115,6 @@ def logout_page(request):
         username = request.session['username']
         request.session.pop('username')
         return redirect('login')
-
-def profile_setup(request):
-    if 'username' not in request.session:
-        return redirect('login')
-    else:
-        username = request.session['username']
-        currentUser = User.objects.get(username = username)
-        if request.method == 'POST':
-            form = ProfileForm(request.POST)
-            print(form)
-            if form.is_valid():
-                cd = form.cleaned_data
-                age = cd['age']
-                print(age)
-                city = cd['city']
-                print(city)
-                phone = cd['phone']
-                print(phone)
-                privacy = cd['privacy']
-                print(privacy)
-                new_profile = Profile.objects.create(
-                    user = currentUser,
-                    age = age,
-                    city = city,
-                    phone = phone,
-                    privacy = privacy,
-                )
-                return redirect('accounts')
-        else:
-            form = ProfileForm()
-            message = 'fill out form below'
-            parameters = {
-                'form':form,
-                'currentUser':currentUser,
-                'message':message,
-            }
-            return render(request, 'tabs/profile_setup.html', parameters)
 
 # The following view is what will be used to display all of the groups and informaiton
 # for the logged in user including groups balances and friends
@@ -262,6 +226,63 @@ def groupHome(request, groupId):
             'transactions':transactions,
         }
         return render(request, 'tabs/group_home.html', parameters)
+
+def profile_setup(request):
+    if 'username' not in request.session:
+        return redirect('login')
+    else:
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        if request.method == 'POST':
+            form = ProfileForm(request.POST)
+            print(form)
+            if form.is_valid():
+                cd = form.cleaned_data
+                age = cd['age']
+                print(age)
+                city = cd['city']
+                print(city)
+                phone = cd['phone']
+                print(phone)
+                privacy = cd['privacy']
+                print(privacy)
+                new_profile = Profile.objects.create(
+                    user = currentUser,
+                    age = age,
+                    city = city,
+                    phone = phone,
+                    privacy = privacy,
+                )
+                return redirect('accounts')
+        else:
+            form = ProfileForm()
+            message = 'fill out form below'
+            parameters = {
+                'form':form,
+                'currentUser':currentUser,
+                'message':message,
+            }
+            return render(request, 'tabs/profile_setup.html', parameters)
+
+def userBalance(request):
+    if 'username' not in request.session:
+        return redirect('login')
+    else:
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        if request.method == 'POST':
+            form = UserBalance(request.POST)
+            cd = form.cleaned_data
+            cheese = 'cheese'
+        else:
+            form = UserBalance()
+            message = 'please fill out the form below'
+            parameters = {
+                'form':form,
+                'currentUser':currentUser,
+                'message':message,
+            }
+            return render(request, 'tabs/user_balance.html', parameters)
 
 # the following method managed the sending of friend requests to other users and
 # storing a record of that in the database.
