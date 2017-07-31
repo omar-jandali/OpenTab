@@ -95,7 +95,15 @@ class UserBalance(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     amount = models.DecimalField(decimal_places=2, max_digits=9, default=0)
     memo = models.CharField(max_length=200, default='money transfer')
-    activity = models.SmallIntegerField(default=1)
+    transfer = models.SmallIntegerField(default=1)
+    created = models.DateTimeField(auto_now_add=True)
+
+class GroupBalance(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    amount = models.DecimalField(decimal_places=2, max_digits=9, default=0)
+    memo = models.CharField(max_length=200, default='group transfer')
+    transfer = models.SmallIntegerField(default=1)
     created = models.DateTimeField(auto_now_add=True)
 
 class Activity(models.Model):

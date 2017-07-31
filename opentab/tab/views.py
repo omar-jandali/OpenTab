@@ -12,10 +12,12 @@ from random import randint
 from decimal import Decimal
 
 from .models import Group, User, Member, Record, Transaction, Request, Friend, Profile
+from .models import UserBalance, GroupBalance
+
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
 from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
 from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm, ProfileForm
-from .forms import UserBalance
+from .forms import IndividualFundingForm, GroupFundingForm
 
 # The signup method is where all of the processing and display of the users signup
 # screen. The form asks for username, password, verify the password, and the email
@@ -140,6 +142,14 @@ def userHome(request):
         groups = Group.objects.all()
         # the following post request is what will process the searched portion of
         # the home page.
+        userBalances = UserBalance.objects.filter(user = currentUser).all()
+        totals = UserBalance.objects.filter(user = currentUser).all()
+        total_amount = 0
+        for total in totals:
+            if total.transfer == 1:
+                total_amount = total_amount - total.amount
+            if total.transfer == 2:
+                total_amount = total_amount + total.amount
         if request.method == "POST":
             for searched in request.POST:
                 # the following stores the name that was seached in the search box
@@ -166,6 +176,8 @@ def userHome(request):
                             'requested':requested,
                             'friender':friender,
                             'friended':friended,
+                            'userBalances':userBalances,
+                            'total_amount':total_amount,
                         }
                         return render(request, 'tabs/user_home.html', parameters)
                     else:
@@ -182,6 +194,8 @@ def userHome(request):
                             'requested':requested,
                             'friender':friender,
                             'friended':friended,
+                            'userBalances':userBalances,
+                            'total_amount':total_amount,
                         }
                 return render(request, 'tabs/user_home.html', parameters)
         else:
@@ -195,6 +209,8 @@ def userHome(request):
                 'requested':requested,
                 'friender':friender,
                 'friended':friended,
+                'userBalances':userBalances,
+                'total_amount':total_amount,
             }
             return render(request, 'tabs/user_home.html', parameters)
     else:
@@ -218,12 +234,25 @@ def groupHome(request, groupId):
         members = Member.objects.filter(group = group.group).all()
         records = Record.objects.filter(group = group.group).all()
         transactions = Transaction.objects.filter(group = group.group).all()
+        balances = GroupBalance.objects.filter(group = group.group).all()
+        # the following is going to calculate the total amount of money each user has
+        totals = GroupBalance.objects.filter(group = group.group).filter(user = currentUser).all()
+        print(totals)
+        total_amount = 0
+        for total in totals:
+            if total.transfer == 1:
+                total_amount = total_amount - total.amount
+            if total.transfer == 2:
+                total_amount = total_amount + total.amount
         #these are all the parameters that need to be passed to the html tempalte
         parameters = {
             'members':members,
             'records':records,
             'group':group,
             'transactions':transactions,
+            'currentUser':currentUser,
+            'balances':balances,
+            'total_amount':total_amount,
         }
         return render(request, 'tabs/group_home.html', parameters)
 
@@ -264,18 +293,28 @@ def profile_setup(request):
             }
             return render(request, 'tabs/profile_setup.html', parameters)
 
-def userBalance(request):
+def userTransfer(request):
     if 'username' not in request.session:
         return redirect('login')
     else:
         username = request.session['username']
         currentUser = User.objects.get(username = username)
         if request.method == 'POST':
-            form = UserBalance(request.POST)
-            cd = form.cleaned_data
-            cheese = 'cheese'
+            form = IndividualFundingForm(request.POST)
+            if form.is_valid():
+                cd = form.cleaned_data
+                amount = cd['amount']
+                memo = cd['memo']
+                transfer = cd['transfer']
+                new_balance = UserBalance.objects.create(
+                    user = currentUser,
+                    amount = amount,
+                    memo = memo,
+                    transfer = transfer,
+                )
+                return redirect('home_page')
         else:
-            form = UserBalance()
+            form = IndividualFundingForm()
             message = 'please fill out the form below'
             parameters = {
                 'form':form,
@@ -283,6 +322,39 @@ def userBalance(request):
                 'message':message,
             }
             return render(request, 'tabs/user_balance.html', parameters)
+
+def groupTransfer(request, groupId):
+    if 'username' not in request.session:
+        return redirect('login')
+    else:
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        group = Group.objects.get(id = groupId)
+        if request.method == 'POST':
+            form = GroupFundingForm(request.POST)
+            if form.is_valid():
+                cd = form.cleaned_data
+                amount = cd['amount']
+                memo = cd['memo']
+                transfer = cd['transfer']
+                new_balance = GroupBalance.objects.create(
+                    user = currentUser,
+                    group = group,
+                    amount = amount,
+                    memo = memo,
+                    transfer = transfer,
+                )
+                return redirect('group_home', groupId=group.id)
+        else:
+            form = GroupFundingForm()
+            message = 'Fill out the form'
+            parameters = {
+                'form':form,
+                'currentUser':currentUser,
+                'message':message,
+                'group':group,
+            }
+            return render(request, 'tabs/group_balance.html', parameters)
 
 # the following method managed the sending of friend requests to other users and
 # storing a record of that in the database.

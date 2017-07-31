@@ -4,6 +4,7 @@
 from django import forms
 from django.forms import ModelForm
 from tab.models import Group, Member, Record, Transaction, Profile, UserBalance
+from tab.models import GroupBalance
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -67,12 +68,22 @@ class IndividualSplitTransactionForm(forms.ModelForm):
         model = Transaction
         fields = ['amount', 'description']
 
-class AddIndvidualFundingForm(forms.ModelForm):
-    activity_choices = (('1', 'widthrawl'),
-                ('2', 'deposit'))
-    activity = forms.TypedChoiceField(
-        choices=activity_choices, widget=forms.RadioSelect, coerce=int
+class IndividualFundingForm(forms.ModelForm):
+    transfer_choices = (('1', 'widthrawl'),
+                        ('2', 'deposit'))
+    transfer = forms.TypedChoiceField(
+        choices=transfer_choices, widget=forms.RadioSelect, coerce=int
     )
     class Meta:
         model = UserBalance
-        fields = ['amount', 'description', 'activity']
+        fields = ['amount', 'memo', 'transfer']
+
+class GroupFundingForm(forms.ModelForm):
+    transfer_choices = (('1', 'withdrawl'),
+                        ('2', 'deposit'))
+    transfer = forms.TypedChoiceField(
+        choices=transfer_choices, widget=forms.RadioSelect, coerce=int
+    )
+    class Meta:
+        model = GroupBalance
+        fields = ['amount', 'memo', 'transfer']
