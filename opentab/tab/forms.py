@@ -69,8 +69,8 @@ class IndividualSplitTransactionForm(forms.ModelForm):
         fields = ['amount', 'description']
 
 class IndividualFundingForm(forms.ModelForm):
-    transfer_choices = (('1', 'widthrawl'),
-                        ('2', 'deposit'))
+    transfer_choices = (('1', 'opentab-to-Payapal'),
+                        ('2', 'PayPal-to-Opentab'))
     transfer = forms.TypedChoiceField(
         choices=transfer_choices, widget=forms.RadioSelect, coerce=int
     )
@@ -79,8 +79,8 @@ class IndividualFundingForm(forms.ModelForm):
         fields = ['amount', 'memo', 'transfer']
 
 class GroupFundingForm(forms.ModelForm):
-    transfer_choices = (('1', 'withdrawl'),
-                        ('2', 'deposit'))
+    transfer_choices = (('1', 'group-to-individual'),
+                        ('2', 'individual-to-group'))
     transfer = forms.TypedChoiceField(
         choices=transfer_choices, widget=forms.RadioSelect, coerce=int
     )

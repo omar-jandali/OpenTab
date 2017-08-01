@@ -4,7 +4,7 @@
   <h2>{{ currentUser.username }} -- Balance:{{ total_amount }}</h2>
   <h3><a href="{% url 'profile_setup' %}">profile</a></h3>
   <h3><a href="{% url 'accounts' %}">accounts</a></h3>
-  <h3><a href="{% url 'user_balance' %}">transfer money</a></h3>
+  <h3><a href="{% url 'user_balance' %}">transfer money (PayPal)</a></h3>
   <form action="" method="POST">
     {% csrf_token %}
     <input type="text" name="searched">

@@ -236,14 +236,26 @@ def groupHome(request, groupId):
         transactions = Transaction.objects.filter(group = group.group).all()
         balances = GroupBalance.objects.filter(group = group.group).all()
         # the following is going to calculate the total amount of money each user has
-        totals = GroupBalance.objects.filter(group = group.group).filter(user = currentUser).all()
-        print(totals)
-        total_amount = 0
-        for total in totals:
-            if total.transfer == 1:
-                total_amount = total_amount - total.amount
-            if total.transfer == 2:
-                total_amount = total_amount + total.amount
+        # totals = GroupBalance.objects.filter(group = group.group).filter(user = currentUser).all()
+        # print(totals)
+        # total_amount = 0
+        # for total in totals:
+        #     if total.transfer == 1:
+        #         total_amount = total_amount - total.amount
+        #     if total.transfer == 2:
+        #         total_amount = total_amount + total.amount
+        totals = GroupBalance.objects.filter(group = group.group).all()
+        # for total in totals:
+        #     for member in members:
+        #         total_amount = member.funding
+        #         if total.user.username == member.user.username:
+        #             if total.transfer == 1:
+        #                 total_amount = total_amount - total.amount
+        #             if total.transfer == 2:
+        #                 total_amount = total_amount + total.amount
+        #         update_member = member
+        #         update_member.funding = total_amount
+        #         update_member.save()
         #these are all the parameters that need to be passed to the html tempalte
         parameters = {
             'members':members,
@@ -252,7 +264,6 @@ def groupHome(request, groupId):
             'transactions':transactions,
             'currentUser':currentUser,
             'balances':balances,
-            'total_amount':total_amount,
         }
         return render(request, 'tabs/group_home.html', parameters)
 
@@ -330,6 +341,8 @@ def groupTransfer(request, groupId):
         username = request.session['username']
         currentUser = User.objects.get(username = username)
         group = Group.objects.get(id = groupId)
+        members = Member.objects.filter(group = group).all()
+        # balances = UserBalance.objects.get(user = currentUser)
         if request.method == 'POST':
             form = GroupFundingForm(request.POST)
             if form.is_valid():
@@ -337,14 +350,38 @@ def groupTransfer(request, groupId):
                 amount = cd['amount']
                 memo = cd['memo']
                 transfer = cd['transfer']
-                new_balance = GroupBalance.objects.create(
+                new_group_balance = GroupBalance.objects.create(
                     user = currentUser,
                     group = group,
                     amount = amount,
                     memo = memo,
                     transfer = transfer,
                 )
+                for member in members:
+                    if member.user == currentUser:
+                        funding = member.funding
+                        update_member = member
+                        if transfer == 1:
+                            update_member.funding = funding - amount
+                        if transfer == 2:
+                            update_member.funding = funding + amount
+                        update_member.save()
+                if transfer == 1:
+                    new_user_balance = UserBalance.objects.create(
+                        user = currentUser,
+                        amount = amount,
+                        memo = memo,
+                        transfer = 2
+                    )
+                if transfer == 2:
+                    new_user_balance = UserBalance.objects.create(
+                        user = currentUser,
+                        amount = amount,
+                        memo = memo,
+                        transfer = 1
+                    )
                 return redirect('group_home', groupId=group.id)
+
         else:
             form = GroupFundingForm()
             message = 'Fill out the form'
@@ -567,6 +604,7 @@ def addRecord(request, groupId):
                     group = group,
                     user = currentUser,
                 )
+
                 # the following will take all of the members in the group and for each
                 # member, it will go through and check to see if the if the checkbox
                 # for the specific user is selected.
@@ -592,6 +630,7 @@ def addRecord(request, groupId):
                                 user = selected_user,
                                 record = new_record,
                             )
+
                         if new_record.split == 2:
                             # if the record is an idividual split, then a predetermined
                             # string will be stored and later changed when the users inputs
@@ -650,6 +689,10 @@ def addTransaction(request, groupId, recordId):
         # the following grabs all of the objects that are related to this specific
         # transaction and record.
         transactions = Transaction.objects.filter(record=recordId).all()
+        # the following is going to collect all of the members records related
+        # to this group so that i can be updated and saved within the members
+        # tabs based on the amount of the expense that is due for each memver
+        members = Member.objects.filter(group = group).all()
         # the following will create a formset that will create a form for rach of the
         # members that are directly related to the transaction. the number of forms
         # comes from the result of the transCount queryset
@@ -681,6 +724,11 @@ def addTransaction(request, groupId, recordId):
                             trans.description = description
                             trans.amount = split_amount
                             trans.save()
+                    for member in members:
+                        funding = member.funding
+                        update_member = member
+                        update_member.funding = funding - split_amount
+                        update_member.save()
                     return redirect('group_home', groupId=group.id)
             if record.split == 2:
                 # if the user maked the expense as an individual expense, there is
@@ -737,6 +785,11 @@ def addTransaction(request, groupId, recordId):
                         currentTrans.amount = finalAmount
                         currentTrans.description = currentDescription
                         currentTrans.save()
+                        for member in members:
+                            funding = member.funding
+                            update_member = member
+                            update_member = funding - finalAmount
+                            update_member.save()
                         print(currentTrans)
                         # the following will increment each time the loop is cycled so that
                         # it is not just one transaction record that is constantly being updated

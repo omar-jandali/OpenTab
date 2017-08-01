@@ -72,6 +72,7 @@ class Member(models.Model):
     user = models.ForeignKey(User, default=1, on_delete=models.CASCADE) #user
     group = models.ForeignKey(Group, default=1 , on_delete=models.CASCADE) #user
     status = models.SmallIntegerField(choices=MEMBER_STATUS_CHOICES, default=1) #user
+    funding = models.DecimalField(decimal_places=2, max_digits=9, default=0.00)
     created = models.DateTimeField(auto_now_add=True) #server
 
 class Record(models.Model):
