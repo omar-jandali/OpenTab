@@ -342,6 +342,16 @@ def groupTransfer(request, groupId):
         currentUser = User.objects.get(username = username)
         group = Group.objects.get(id = groupId)
         members = Member.objects.filter(group = group).all()
+        balances = UserBalance.objects.filter(user = currentUser).all()
+        total_user_balance = 0
+        for balance in balances:
+            if balance.transfer == 1:
+                total_user_balance = total_user_balance - balance.amount
+            if balance.transfer == 2:
+                total_user_balance = total_user_balance + balance.amount
+        for member in members:
+            if member.user == currentUser:
+                total_group_balance = member.funding
         # balances = UserBalance.objects.get(user = currentUser)
         if request.method == 'POST':
             form = GroupFundingForm(request.POST)
@@ -350,6 +360,31 @@ def groupTransfer(request, groupId):
                 amount = cd['amount']
                 memo = cd['memo']
                 transfer = cd['transfer']
+                print(total_user_balance)
+                print(total_group_balance)
+                print(amount)
+                if transfer == 2:
+                    if total_user_balance < amount:
+                        form = GroupFundingForm()
+                        message = 'not enough funds in account'
+                        parameters = {
+                            'form':form,
+                            'currentUser':currentUser,
+                            'message':message,
+                            'group':group,
+                        }
+                        return render(request, 'tabs/group_balance.html', parameters)
+                if transfer == 1:
+                    if total_group_balance < amount:
+                        form = GroupFundingForm()
+                        message = 'not enough funds in account'
+                        parameters = {
+                            'form':form,
+                            'currentUser':currentUser,
+                            'message':message,
+                            'group':group,
+                        }
+                        return render(request, 'tabs/group_balance.html', parameters)
                 new_group_balance = GroupBalance.objects.create(
                     user = currentUser,
                     group = group,
