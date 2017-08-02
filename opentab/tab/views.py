@@ -140,16 +140,31 @@ def userHome(request):
         friended = Friend.objects.filter(friend = currentUser).all()
         # this is used to actually display the group info that the user is a part of
         groups = Group.objects.all()
-        # the following post request is what will process the searched portion of
-        # the home page.
+        # the following lines of code with take care of two different parts of opentab.
+        # THe first line will grab all objects that store every users current balance
+        # within the application.
+        #
+        # userBalances is passed through to teh html file and displayed there.
+        # totals is what will  be used to calculate the current balance based on all
+        # of the different balance records
         userBalances = UserBalance.objects.filter(user = currentUser).all()
         totals = UserBalance.objects.filter(user = currentUser).all()
+        # the following will initiate the starting amount as zero so that the
+        # calculation is not based on previously stored number
         total_amount = 0
+        # the following will grab every balance objects that was filtered and if
+        # the transfer is set as 1 which is a trasfer from opentab account to PayPal
+        # account, the number will be subtracted from the total.
+        # if the transfer is set to 2 which indicateds that there is money sent from
+        # the paypal account to the opentab account, it will be added to the users
+        # current balance
         for total in totals:
             if total.transfer == 1:
                 total_amount = total_amount - total.amount
             if total.transfer == 2:
                 total_amount = total_amount + total.amount
+        # the following post request is what will process the searched portion of
+        # the home page.
         if request.method == "POST":
             for searched in request.POST:
                 # the following stores the name that was seached in the search box
@@ -234,29 +249,9 @@ def groupHome(request, groupId):
         members = Member.objects.filter(group = group.group).all()
         records = Record.objects.filter(group = group.group).all()
         transactions = Transaction.objects.filter(group = group.group).all()
+        # the following is going to grab all of the balances for the members of the
+        # selected group.
         balances = GroupBalance.objects.filter(group = group.group).all()
-        # the following is going to calculate the total amount of money each user has
-        # totals = GroupBalance.objects.filter(group = group.group).filter(user = currentUser).all()
-        # print(totals)
-        # total_amount = 0
-        # for total in totals:
-        #     if total.transfer == 1:
-        #         total_amount = total_amount - total.amount
-        #     if total.transfer == 2:
-        #         total_amount = total_amount + total.amount
-        totals = GroupBalance.objects.filter(group = group.group).all()
-        # for total in totals:
-        #     for member in members:
-        #         total_amount = member.funding
-        #         if total.user.username == member.user.username:
-        #             if total.transfer == 1:
-        #                 total_amount = total_amount - total.amount
-        #             if total.transfer == 2:
-        #                 total_amount = total_amount + total.amount
-        #         update_member = member
-        #         update_member.funding = total_amount
-        #         update_member.save()
-        #these are all the parameters that need to be passed to the html tempalte
         parameters = {
             'members':members,
             'records':records,
@@ -267,12 +262,19 @@ def groupHome(request, groupId):
         }
         return render(request, 'tabs/group_home.html', parameters)
 
+# this is a page that the user is redirected to once they register or choose to update
+# through the main page. This is where the user will create their profile by providing
+# specified informaiton.
 def profile_setup(request):
     if 'username' not in request.session:
         return redirect('login')
     else:
+        # the following is just going to grab the currently logged in user and
+        # save the profile information to the appropriate user
         username = request.session['username']
         currentUser = User.objects.get(username = username)
+        # the following is the provessing for the form where the user entered
+        # the profile informaiton
         if request.method == 'POST':
             form = ProfileForm(request.POST)
             print(form)
@@ -286,6 +288,7 @@ def profile_setup(request):
                 print(phone)
                 privacy = cd['privacy']
                 print(privacy)
+                # this is the new record that is going to be created and saved
                 new_profile = Profile.objects.create(
                     user = currentUser,
                     age = age,
@@ -295,6 +298,8 @@ def profile_setup(request):
                 )
                 return redirect('accounts')
         else:
+            # this is what is going to be saved into the html file and used to
+            # render the file
             form = ProfileForm()
             message = 'fill out form below'
             parameters = {
@@ -304,12 +309,16 @@ def profile_setup(request):
             }
             return render(request, 'tabs/profile_setup.html', parameters)
 
+# this is how the user will be able to transfer money between the users paypal
+# account and the users opentab account.
 def userTransfer(request):
     if 'username' not in request.session:
         return redirect('login')
     else:
         username = request.session['username']
         currentUser = User.objects.get(username = username)
+        # the following is where the money transfer form is going to be processed
+        # and saved for the user so that the current balance can be calculated
         if request.method == 'POST':
             form = IndividualFundingForm(request.POST)
             if form.is_valid():
@@ -317,6 +326,7 @@ def userTransfer(request):
                 amount = cd['amount']
                 memo = cd['memo']
                 transfer = cd['transfer']
+                # the is the new userBalance object that is going to be saved
                 new_balance = UserBalance.objects.create(
                     user = currentUser,
                     amount = amount,
@@ -334,19 +344,43 @@ def userTransfer(request):
             }
             return render(request, 'tabs/user_balance.html', parameters)
 
+# group transfer is where the majority of the balancing is going to be taking place.
+# This is where each group members balances are going to be tracked and recorded.
+# This is also where the updating of each members total baolance within the group
+# will be calculated and recorded.
 def groupTransfer(request, groupId):
     if 'username' not in request.session:
         return redirect('login')
     else:
+        # there are a lot of query set that are required to run this method because
+        # of the complexity.
+        # The first two are going to grab the user that is looged in
         username = request.session['username']
         currentUser = User.objects.get(username = username)
+        # the following is the group that is currently selected and used to display
+        # relative informaiton
         group = Group.objects.get(id = groupId)
+        # the following will grab all of the members that are a part of the current
+        # group so that the correct info can be updated and stored
         members = Member.objects.filter(group = group).all()
+        # balances will grab all of the userBalances for the currently logged in user
+        # this is what will allow the users balance to keep up to date.
+        # This will be updated every time that the user transfers money between the
+        # main account and the group account.
         balances = UserBalance.objects.filter(user = currentUser).all()
+        # Like the userTransfer, the following lines will determine what the most up
+        # to date balance is for the current member and take that calculated amount
+        # so that it can be updated and saved into the members funding column.
         total_user_balance = 0
         for balance in balances:
+            # this means that the user is sending money from the group account to
+            # individual account
+            # money will be subtracked from the major account
             if balance.transfer == 1:
                 total_user_balance = total_user_balance - balance.amount
+            # this means that the user is sending money from the individual account to
+            # group account
+            # money will be added from the major account
             if balance.transfer == 2:
                 total_user_balance = total_user_balance + balance.amount
         for member in members:
@@ -354,6 +388,7 @@ def groupTransfer(request, groupId):
                 total_group_balance = member.funding
         # balances = UserBalance.objects.get(user = currentUser)
         if request.method == 'POST':
+            # this is where the group transfer form will be processed and filled out
             form = GroupFundingForm(request.POST)
             if form.is_valid():
                 cd = form.cleaned_data
@@ -363,6 +398,9 @@ def groupTransfer(request, groupId):
                 print(total_user_balance)
                 print(total_group_balance)
                 print(amount)
+                # the following is validation to make sure that there is enough
+                # funding in the main account to transfer into the group account
+                # when sending money from the individual account to group acccout
                 if transfer == 2:
                     if total_user_balance < amount:
                         form = GroupFundingForm()
@@ -374,6 +412,9 @@ def groupTransfer(request, groupId):
                             'group':group,
                         }
                         return render(request, 'tabs/group_balance.html', parameters)
+                # the following is validation to make sure that there is enough
+                # funding in the group account to transfer into the individual account
+                # when sending money from the group account to individual acccout
                 if transfer == 1:
                     if total_group_balance < amount:
                         form = GroupFundingForm()
@@ -385,6 +426,9 @@ def groupTransfer(request, groupId):
                             'group':group,
                         }
                         return render(request, 'tabs/group_balance.html', parameters)
+                # this is where a new balance will be recorded to take into account
+                # this new balance object when calculate the total balance for the
+                # current user that is logged in
                 new_group_balance = GroupBalance.objects.create(
                     user = currentUser,
                     group = group,
@@ -392,6 +436,10 @@ def groupTransfer(request, groupId):
                     memo = memo,
                     transfer = transfer,
                 )
+                # every member in a group has a total balance that they have within
+                # the group to see how much each person has to contributed
+                # This will be updated and saved with every group transaction and
+                # money transfer that occurs
                 for member in members:
                     if member.user == currentUser:
                         funding = member.funding
@@ -401,6 +449,16 @@ def groupTransfer(request, groupId):
                         if transfer == 2:
                             update_member.funding = funding + amount
                         update_member.save()
+                # this was a slightly trick part. WHen you transfer money
+                # from group account to individual account or other way arround
+                # and a new balance is created and added to your balance statement,
+                # it has to be inverted becasue if you can money out of one account
+                # and pout it in the other account one looses money and the other
+                # once gains money. THis is was the way for me to do that...
+
+                # the following will make sure that when money is taken out of the
+                # group account, the value is added to the individual account rahter
+                # than subtracked
                 if transfer == 1:
                     new_user_balance = UserBalance.objects.create(
                         user = currentUser,
@@ -408,6 +466,9 @@ def groupTransfer(request, groupId):
                         memo = memo,
                         transfer = 2
                     )
+                # the following will make sure that when money is taken out of the
+                # individual account, the value is added to the group account rahter
+                # than subtracked
                 if transfer == 2:
                     new_user_balance = UserBalance.objects.create(
                         user = currentUser,
@@ -416,8 +477,8 @@ def groupTransfer(request, groupId):
                         transfer = 1
                     )
                 return redirect('group_home', groupId=group.id)
-
         else:
+            # this is what will display the original html file and the parameters
             form = GroupFundingForm()
             message = 'Fill out the form'
             parameters = {
@@ -759,6 +820,9 @@ def addTransaction(request, groupId, recordId):
                             trans.description = description
                             trans.amount = split_amount
                             trans.save()
+                    # this will take the recently added transaction and add the users
+                    # amount due after even split and subtract it from the users
+                    # group account balance.
                     for member in members:
                         funding = member.funding
                         update_member = member
@@ -820,6 +884,9 @@ def addTransaction(request, groupId, recordId):
                         currentTrans.amount = finalAmount
                         currentTrans.description = currentDescription
                         currentTrans.save()
+                        # this will take the recently added transaction and add the users
+                        # amount due after even split and subtract it from the users
+                        # group account balance.
                         for member in members:
                             funding = member.funding
                             update_member = member
