@@ -5,9 +5,20 @@
   <a href="{% url 'home_page' %}">Home</a>
 </h3>
   <h2>{{ group.group.name }}</h2>
+  {{ message }}
   <h3>members</h3>
   {% for member in members %}
-    <p>{{ member.user.username }}</p>
+    <p>
+      {{ member.user.username }} -- {{ member.funding }}
+      {% if member.user.username == currentUser.username %}
+        {{ total_amount }}
+        <a href="{% url 'group_balance' group.group.id %}"> transfer money (user to group balances)</a>
+      {% endif %}
+    </p>
+  {% endfor %}
+  <h3>Balances</h3>
+  {% for balance in balances %}
+    <p>{{ balance.user }}, {{ balance.amount }}, {{ balance.memo }}, {{ balance.transfer }}</p>
   {% endfor %}
   <h3>records</h3>
   {% for record in records %}

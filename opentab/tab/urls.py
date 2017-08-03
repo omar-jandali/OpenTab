@@ -6,14 +6,14 @@ from . import views
 # OF THE STUFF I DID (GROUPS, MEMBERS, RECORDS, TRANSACTIONS, USERS). YOU WILL
 # USE THEN WHEN PASSING IN LINKS.
 urlpatterns = [
+    url(r'^$', views.userHome, name='home_page'),
     url(r'^login$', views.login_page, name='login'),
     url(r'^signup$', views.signup, name='signup'),
     url(r'^logout$', views.logout_page, name='logout'),
     url(r'^setup_profile/$', views.profile_setup, name='profile_setup'),
-    url(r'^$', views.userHome, name='home_page'),
+    url(r'^user_balance/$', views.userTransfer, name='user_balance'),
     url(r'^(?P<requested>[\w+]+)/sendRequest/$', views.sendRequest, name="send_request"),
     url(r'^(?P<accepted>[\w+]+)/acceptRequest/$', views.acceptRequest, name="accept_request"),
-    url(r'^(?P<groupId>[0-9]+)/home/$', views.groupHome, name='group_home'),
     url(r'^createGroup/$', views.createGroup, name='create_group'),
     # for this url, you will have to enter the group id and then add members to
     # the url. an example would be 127.0.0.1:8000/3/addMembers
@@ -28,6 +28,8 @@ urlpatterns = [
     # expense and checks to make sure everything is correct before creating the expense
     url(r'^(?P<groupId>[0-9]+)/(?P<recordId>[0-9]+)/add_transaction/$',
         views.addTransaction, name='add_transactions'),
+    url(r'^(?P<groupId>[0-9]+)/home/$', views.groupHome, name='group_home'),
+    url(r'^(?P<groupId>[0-9]+)/group_balance/$', views.groupTransfer, name='group_balance'),
     url(r'^accounts/$', views.accounts, name='accounts'),
     url(r'^accounts/delete$', views.accountsDelete, name='delete_accounts'),
 ]
