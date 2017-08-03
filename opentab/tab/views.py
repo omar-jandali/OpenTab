@@ -963,8 +963,7 @@ def accountsDelete(request):
         Groups.objects.all().remove()
         return redirect('/accounts')
     else:
-        message = 'delete all of the following r
-        ecords'
+        message = 'delete all of the following records'
         params = {
             'groups':groups,
             'message':message,
