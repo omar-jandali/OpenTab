@@ -109,8 +109,10 @@ class GroupBalance(models.Model):
 
 class Activity(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE) #server
-    group = models.ForeignKey(Group, on_delete=models.CASCADE) #server
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True) #server
     description = models.CharField(max_length=200) #server
+    status = models.SmallIntegerField(default=1)
+    category = models.SmallIntegerField(default=1)
     created = models.DateTimeField(auto_now_add=True) #server
 
 class Notification(models.Model):

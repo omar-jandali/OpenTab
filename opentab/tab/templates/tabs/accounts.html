@@ -16,6 +16,10 @@
     <p>{{ profile.user.username }}, {{ profile.age }}, {{ profile.city }}, {{ profile.phone }}
     {{ profile.privacy }}</p>
   {% endfor %}
+  <h3>Activity</h3>
+  {% for activity in activities %}
+    <p>{{ activity.user }} {{ activity.description }}, {{ activity.status }}</p>
+  {% endfor %}
   <h3>Requests</h3>
   {% for request in requests %}
     <p>{{ request.user }}, {{ request.requested }}, {{ request.created }}</p>

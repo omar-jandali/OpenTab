@@ -12,7 +12,7 @@ from random import randint
 from decimal import Decimal
 
 from .models import Group, User, Member, Record, Transaction, Request, Friend, Profile
-from .models import UserBalance, GroupBalance
+from .models import UserBalance, GroupBalance, Activity
 
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
 from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
@@ -193,6 +193,7 @@ def userHome(request):
                             'friended':friended,
                             'userBalances':userBalances,
                             'total_amount':total_amount,
+                            'activities':activities,
                         }
                         return render(request, 'tabs/user_home.html', parameters)
                     else:
@@ -211,6 +212,7 @@ def userHome(request):
                             'friended':friended,
                             'userBalances':userBalances,
                             'total_amount':total_amount,
+                            'activities':activities,
                         }
                 return render(request, 'tabs/user_home.html', parameters)
         else:
@@ -226,6 +228,7 @@ def userHome(request):
                 'friended':friended,
                 'userBalances':userBalances,
                 'total_amount':total_amount,
+                'activities':activities,
             }
             return render(request, 'tabs/user_home.html', parameters)
     else:
@@ -939,6 +942,7 @@ def accounts(request):
     requests = Request.objects.all()
     friends = Friend.objects.all()
     profiles = Profile.objects.all()
+    activities = Activity.objects.all()
     if 'username' in request.session:
         currentUser = request.session['username']
     else:
@@ -953,6 +957,7 @@ def accounts(request):
         'requests':requests,
         'friends':friends,
         'profiles':profiles,
+        'activities':activities,
     }
     return render(request, 'tabs/accounts.html', params)
     # return render(request, 'tabs/addMembers.html', params)

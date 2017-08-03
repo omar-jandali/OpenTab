@@ -18,13 +18,19 @@
     </a>
   {% endif %}
   {% if requester %}
+  <h3>Activity</h3>
+  {% for activity in activities %}
+    <p>{{ activity.description }}</p>
+  {% endfor %}
   <h3>Pending Requests</h3>
     {% for request in requester %}
       <p>
         {{ request.requested.username }}
-        <a href="{% url 'accept_request' request.requested.username %}">
-          accept request
-        </a>
+        {% if request.requested.username == currentUser.username %}
+          <a href="{% url 'accept_request' request.requested.username %}">
+            accept request
+          </a>
+        {% endif %}
       </p>
     {% endfor %}
   {% endif %}
