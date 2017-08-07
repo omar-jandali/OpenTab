@@ -6,6 +6,10 @@
 </h3>
   <h2>{{ group.group.name }}</h2>
   {{ message }}
+  <h3>Activity</h3>
+  {% for activity in activities %}
+    <p>{{ activity.description }}</p>
+  {% endfor %}
   <h3>members</h3>
   {% for member in members %}
     <p>

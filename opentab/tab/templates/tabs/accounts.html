@@ -18,7 +18,7 @@
   {% endfor %}
   <h3>Activity</h3>
   {% for activity in activities %}
-    <p>{{ activity.user }} {{ activity.description }}, {{ activity.status }}</p>
+    <p>{{ activity.user }}, {{ activity.group.name }}, {{ activity.description }}, {{ activity.status }}</p>
   {% endfor %}
   <h3>Requests</h3>
   {% for request in requests %}

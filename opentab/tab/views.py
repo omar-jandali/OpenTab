@@ -140,15 +140,14 @@ def userHome(request):
         friended = Friend.objects.filter(friend = currentUser).all()
         # this is used to actually display the group info that the user is a part of
         groups = Group.objects.all()
-        # the following lines of code with take care of two different parts of opentab.
-        # THe first line will grab all objects that store every users current balance
-        # within the application.
-        #
         # userBalances is passed through to teh html file and displayed there.
         # totals is what will  be used to calculate the current balance based on all
         # of the different balance records
         userBalances = UserBalance.objects.filter(user = currentUser).all()
         totals = UserBalance.objects.filter(user = currentUser).all()
+        # the following is going to pull the list of all the activty related to
+        # the logged in user
+        activities = Activity.objects.filter(user = currentUser).all()
         # the following will initiate the starting amount as zero so that the
         # calculation is not based on previously stored number
         total_amount = 0
@@ -247,6 +246,8 @@ def groupHome(request, groupId):
         username = request.session['username']
         currentUser = User.objects.get(username = username)
         group = Member.objects.filter(user = currentUser).filter(group = groupId).first()
+        # the following is going to be the currentGroup by groupId
+        currentGroup = Group.objects.get(id = groupId)
         # the following is the group object with the id that is passed in the url
         # group = Group.objects.get(name = groupName)
         members = Member.objects.filter(group = group.group).all()
@@ -255,6 +256,8 @@ def groupHome(request, groupId):
         # the following is going to grab all of the balances for the members of the
         # selected group.
         balances = GroupBalance.objects.filter(group = group.group).all()
+        # the following is all of the activity related to the specified group
+        activities = Activity.objects.filter(group = currentGroup).all()
         parameters = {
             'members':members,
             'records':records,
@@ -262,6 +265,7 @@ def groupHome(request, groupId):
             'transactions':transactions,
             'currentUser':currentUser,
             'balances':balances,
+            'activities':activities,
         }
         return render(request, 'tabs/group_home.html', parameters)
 
@@ -513,6 +517,26 @@ def sendRequest(request, requested):
             user = currentUser,
             requested = requestedUser,
         )
+        # the following will add a record to the activity to notify bother users
+        # of the Activity
+        sendingDescription = 'Friend request to ' + requested + ' has been sent'
+        receivingDescription = username + ' has sent you a friend request'
+        # the first of the two objects that is goint to be stored is what the sender
+        # is going to see.
+        sender_activity = Activity.objects.create(
+            user = currentUser,
+            description = sendingDescription,
+            status = 1,
+            category = 1,
+        )
+        # the second activity objects is going to be displayed to the person
+        # who is receiving the friend request
+        receiving_activity = Activity.objects.create(
+            user = requestedUser,
+            description = receivingDescription,
+            status = 1,
+            category = 1
+        )
         return redirect('accounts')
 
 # The following method will process the acceptaance of a friend request.
@@ -535,6 +559,22 @@ def acceptRequest(request, accepted):
             friend = acceptedUser,
             category = 1,
             status = 1,
+        )
+        # the following two objects are going to be what stores the acceptance of
+        # friend request in teh activty table for both sides
+        accepterDescription = username + ' has accepted your friend request'
+        acceptedDescription = 'You and ' + accepted + ' are now friends'
+        accepted_activity = Activity.objects.create(
+            user = currentUser,
+            description = acceptedDescription,
+            status = 1,
+            category = 1,
+        )
+        accepter_activity = Activity.objects.create(
+            user = acceptedUser,
+            description = accepterDescription,
+            status = 1,
+            category = 1,
         )
         # after the new friend record is created, the original request is found
         # and deleted so that they request does not keep showing up on the logged in
@@ -626,12 +666,24 @@ def addMembers(request, groupId):
         friends = Friend.objects.all()
         # the form is similar to the form submition above for reference
         if request.method == "POST":
-            # the following will scroll through every user in the users table
+            # the following sets the current user as a member of the group once the
+            # group is created as a default
             new_default_member = Member.objects.create(
                 user = currentUser,
                 group = group,
                 status = 1,
             )
+            description = currentUser.username + 'have been added to ' + group.name
+            # the following is going to add a new activity record when the first member of
+            # the group is created
+            default_member_activty = Activity.objects.create(
+                user = currentUser,
+                group = group,
+                description = description,
+                status = 1,
+                category = 1,
+            )
+            # the following will scroll through every user in the users table
             for friend in friends:
                 # it will then check to see if the usersname was returned in the request.
                 # if the username was checked, it will be returned, otherwise it will not
@@ -643,6 +695,16 @@ def addMembers(request, groupId):
                         group = group,
                         status = 1,
                     )
+                    # the following is going to be where each of the members added to
+                    # the group is saved and stored in the activities table
+                    description = selected_user.username + ' has been added to ' + group.name
+                    new_activity_member = Activity.objects.create(
+                        user = selected_user,
+                        group = group,
+                        description = description,
+                        status = 1,
+                        category = 1,
+                    )
                 if friend.friend.username == currentUser.username:
                     selected_user = User.objects.get(username = friend.user)
                     print(selected_user)
@@ -650,6 +712,16 @@ def addMembers(request, groupId):
                         user = selected_user,
                         group = group,
                         status = 1,
+                    )
+                    # the following is going to be where each of the members added to
+                    # the group is saved and stored in the activities table
+                    description = selected_user.username + ' has been added to ' + group.name
+                    new_activity_member = Activity.objects.create(
+                        user = selected_user,
+                        group = group,
+                        description = description,
+                        status = 1,
+                        category = 1,
                     )
                     # next three lines will keep track and updated the group count every time that
                     # a new user is added to the specific group that is selected.
@@ -703,7 +775,16 @@ def addRecord(request, groupId):
                     group = group,
                     user = currentUser,
                 )
-
+                # the follwoing is going to create the new activity record when a new
+                # expense is added to the group
+                description = currentUser.username + ' has created a new expense'
+                new_activity = Activity.objects.create(
+                    user = currentUser,
+                    group = group,
+                    description = description,
+                    status = 1,
+                    category = 1,
+                )
                 # the following will take all of the members in the group and for each
                 # member, it will go through and check to see if the if the checkbox
                 # for the specific user is selected.
@@ -823,14 +904,33 @@ def addTransaction(request, groupId, recordId):
                             trans.description = description
                             trans.amount = split_amount
                             trans.save()
+                            # the follwoing is going to be where the people involved
+                            # in the transaction are going to have thier member amounts
+                            # updated based on the expense.
+                            for member in members:
+                                if trans.user == member.user:
+                                    funding = member.funding
+                                    update_member = member
+                                    update_member.funding = funding - split_amount
+                                    update_member.save()
+                            # the following is going to be where a new actiivty is
+                            # created that adds a record of the new expenses
+                            activityDescription = trans.user.username + '\'s amount due is ' + str(split_amount) + ' for ' + description
+                            new_member_activty = Activity.objects.create(
+                                user = trans.user,
+                                group = group,
+                                description = activityDescription,
+                                status = 1,
+                                category = 1,
+                            )
                     # this will take the recently added transaction and add the users
                     # amount due after even split and subtract it from the users
                     # group account balance.
-                    for member in members:
-                        funding = member.funding
-                        update_member = member
-                        update_member.funding = funding - split_amount
-                        update_member.save()
+                    # for member in members:
+                    #     funding = member.funding
+                    #     update_member = member
+                    #     update_member.funding = funding - split_amount
+                    #     update_member.save()
                     return redirect('group_home', groupId=group.id)
             if record.split == 2:
                 # if the user maked the expense as an individual expense, there is
@@ -887,6 +987,14 @@ def addTransaction(request, groupId, recordId):
                         currentTrans.amount = finalAmount
                         currentTrans.description = currentDescription
                         currentTrans.save()
+                        activityDescription = currentTrans.user.username + '\'s amount due is ' + str(finaAmount) + ' for ' + currentDescription
+                        new_member_activty = Activity.objects.create(
+                            user = trans.user,
+                            group = group,
+                            description = activityDescription,
+                            status = 1,
+                            category = 1,
+                        )
                         # this will take the recently added transaction and add the users
                         # amount due after even split and subtract it from the users
                         # group account balance.

@@ -28,7 +28,7 @@ urlpatterns = [
     # expense and checks to make sure everything is correct before creating the expense
     url(r'^(?P<groupId>[0-9]+)/(?P<recordId>[0-9]+)/add_transaction/$',
         views.addTransaction, name='add_transactions'),
-    url(r'^(?P<groupId>[0-9]+)/home/$', views.groupHome, name='group_home'),
+    url(r'^group/(?P<groupId>[0-9]+)/$', views.groupHome, name='group_home'),
     url(r'^(?P<groupId>[0-9]+)/group_balance/$', views.groupTransfer, name='group_balance'),
     url(r'^accounts/$', views.accounts, name='accounts'),
     url(r'^accounts/delete$', views.accountsDelete, name='delete_accounts'),
