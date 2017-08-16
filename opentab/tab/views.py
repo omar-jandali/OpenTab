@@ -19,6 +19,18 @@ from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
 from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm, ProfileForm
 from .forms import IndividualFundingForm, GroupFundingForm
 
+import os
+from synapse_pay_rest import Client
+args = {
+    'client_id':os.environ[''],
+    'client_secret':os.environ[''],
+    'fingerprint':USER_FINGERPRINT,
+    'ip_address':USER_IP_ADDRESS,
+    'development_mode':True,
+    'logging':False,
+}
+client - Client(**args)
+
 # The signup method is where all of the processing and display of the users signup
 # screen. The form asks for username, password, verify the password, and the email
 def signup(request):
