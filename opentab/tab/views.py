@@ -105,6 +105,7 @@ def login_page(request):
         return render(request, 'tabs/login.html', parameters)
 
 # the following is what will take care of the logout portion of the project
+# this comment is to test and make sure that the new gitlab remote is working
 def logout_page(request):
     # the following 3 lines will check to see if there is a username in the session
     # which means that there is someone logged in and it will give them access to

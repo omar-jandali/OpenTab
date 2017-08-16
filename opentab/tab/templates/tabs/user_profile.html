@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>{{ selectedUser.username }}</h2>
+  <p>{{message}}</p>
+  <p>{{ profile.first_name }} {{ profile.last_name }}</p>
+  <p>{{ profile.age }}</p>
+  <p>{{ profile.city }}</p>
+  <p>{{ profile.phone }}</p>
+  <a href="{% url 'logout' %}">Logout</a>
+{% endblock %}
