@@ -4,6 +4,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.forms import formset_factory
 from django.db.models import Q
@@ -37,9 +38,11 @@ def signup(request):
             # the folloiwng will make sure the password and verification are matching
             # before storing the info into the database
             if password == verify:
+                # the following will hash the password
+                secure_password = make_password(password)
                 new_user = User.objects.create(
                     username = username,
-                    password = password,
+                    password = secure_password,
                     email = email,
                 )
                 # the following will store the username of the account that was just
@@ -285,26 +288,31 @@ def profile_setup(request):
         # the profile informaiton
         if request.method == 'POST':
             form = ProfileForm(request.POST)
-            print(form)
             if form.is_valid():
                 cd = form.cleaned_data
-                age = cd['age']
-                print(age)
+                first_name = cd['first_name']
+                last_name = cd['last_name']
+                dob_month = form.cleaned_data.get("dob_month")
+                dob_day = form.cleaned_data.get("dob_day")
+                dob_year = form.cleaned_data.get("dob_year")
                 city = cd['city']
-                print(city)
+                state = cd['state']
                 phone = cd['phone']
-                print(phone)
                 privacy = cd['privacy']
-                print(privacy)
                 # this is the new record that is going to be created and saved
                 new_profile = Profile.objects.create(
                     user = currentUser,
-                    age = age,
+                    first_name = first_name,
+                    last_name = last_name,
+                    dob_month = dob_month,
+                    dob_day = dob_day,
+                    dob_year = dob_year,
                     city = city,
+                    state = state,
                     phone = phone,
                     privacy = privacy,
                 )
-                return redirect('accounts')
+                return redirect('home_page')
         else:
             # this is what is going to be saved into the html file and used to
             # render the file

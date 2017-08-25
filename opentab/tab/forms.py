@@ -2,7 +2,7 @@
 # actually need a form for the user to input informaiton to. The only tables
 # that i think need to be created are the following...
 from django import forms
-from django.forms import ModelForm
+from django.forms import ModelForm, extras
 from tab.models import Group, Member, Record, Transaction, Profile, UserBalance
 from tab.models import GroupBalance
 
@@ -26,9 +26,10 @@ class ProfileForm(forms.ModelForm):
     privacy = forms.TypedChoiceField(
         choices=split_choices, widget=forms.RadioSelect, coerce=int
     )
+    dob = forms.DateField(widget=extras.SelectDateWidget)
     class Meta:
         model = Profile
-        fields = ['age', 'city', 'phone', 'privacy']
+        fields = ['first_name', 'last_name', 'dob', 'city', 'state', 'phone', 'privacy']
 
 class CreateGroupForm(forms.ModelForm):
     class Meta:

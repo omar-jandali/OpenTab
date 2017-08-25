@@ -118,14 +118,19 @@ class Activity(models.Model):
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # server
     description = models.CharField(max_length=200)  # server
-    status = models.SmallIntegerField(choices=NOTIFICATION_STATUS_CHOICES, default=1)  # server
-    category = models.SmallIntegerField(choices=NOTIFICATION_CATEGORY_CHOICES, default=1)  # server
+    status = models.SmallIntegerField(default=1)  # server
+    category = models.SmallIntegerField(default=1)  # server
     created = models.DateTimeField(auto_now_add=True)  # server
 
 class Profile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # server
-    age = models.IntegerField(default=0)
+    first_name = models.CharField(max_length=25, default='first')
+    last_name = models.CharField(max_length=25, default='last')
+    dob_month = models.IntegerField(default=0)
+    dob_day = models.IntegerField(default=0)
+    dob_year = models.IntegerField(default=0)
     city = models.CharField(max_length=45)  # user
+    state = models.CharField(max_length=25, default='state')
     phone = models.BigIntegerField(default=0)  # user
     privacy = models.SmallIntegerField(default=1)  # user
     created = models.DateTimeField(auto_now_add=True)  # server

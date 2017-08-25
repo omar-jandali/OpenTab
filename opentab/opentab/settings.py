@@ -121,3 +121,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# the following is going to be the email that the paypal account is attached to
+PAYPAL_RECEIVER_EMAIL = 'omarjandali@omnacore.com'
+PAYPAL_TEST = True
