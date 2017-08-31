@@ -542,7 +542,7 @@ def sendRequest(request, requested):
             status = 1,
             category = 1
         )
-        return redirect('accounts')
+        return redirect('home_page')
 
 # The following method will process the acceptaance of a friend request.
 def acceptRequest(request, accepted):
@@ -588,7 +588,7 @@ def acceptRequest(request, accepted):
         for request in requests:
             if request.user == acceptedUser.username:
                 request.delete()
-        return redirect('accounts')
+        return redirect('home_page')
 
 # The view is g0ing to be used to create the group and add the information for the
 # group before creating the record in the database. It will also be incharge of adding
@@ -657,17 +657,9 @@ def addMembers(request, groupId):
         currentUser = User.objects.get(username = username)
         # the following line will grab the group object that members will be added ot and
         # stored in a variable that will be referenced later.
-        groups = Group.objects.filter(id = groupId).all()
-        # the following will grab all of the member objects that are related to the logged
-        # in user.
-        members = Member.objects.filter(user = currentUser).all()
-        for member in members:
-            for group in groups:
-                if group.id == member.group.id:
-                    # if the groups id is the same as the group id that is stored in the
-                    # members object, the currently cycled through group is stored as group
-                    group = Group.objects.get(id = group.id)
-        users = User.objects.all()
+        group = Group.objects.get(id = groupId)
+        # the following is going to get all of the friends recotds to use later in order to
+        # ensure that only friend are being added to groups that the user is creating
         friends = Friend.objects.all()
         # the form is similar to the form submition above for reference
         if request.method == "POST":
@@ -676,7 +668,7 @@ def addMembers(request, groupId):
             new_default_member = Member.objects.create(
                 user = currentUser,
                 group = group,
-                status = 1,
+                status = 2,
             )
             description = currentUser.username + 'have been added to ' + group.name
             # the following is going to add a new activity record when the first member of
@@ -743,7 +735,6 @@ def addMembers(request, groupId):
             params = {
                 'message':message,
                 'group':group,
-                'users':users,
                 'friends':friends,
                 'currentUser':currentUser,
             }
