@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
+{% load staticfiles %}
 {% block content %}
-    <h1>Login</h1>
+    <h1 id="blue5">Login</h1>
     <p>{{ message }}</p>
     <form method="POST">
         {% csrf_token %}

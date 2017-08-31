@@ -120,7 +120,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
+CURRENT_PATH = os.path.abspath(os.path.dirname(__file__))
+
+MEDIA_ROOT = os.path.join(CURRENT_PATH, 'media')
+
+MEDIA_URL = '/media/'
+
+STATIC_ROOT = '/static/'
+
 STATIC_URL = '/static/'
+
+STATICFILES_DIRS = (
+    os.path.join(os.path.dirname(__file__), 'static').replace('\\','/'),
+)
 
 # the following is going to be the email that the paypal account is attached to
 PAYPAL_RECEIVER_EMAIL = 'omarjandali@omnacore.com'

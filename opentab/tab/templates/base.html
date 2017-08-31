@@ -3,12 +3,12 @@
 <html>
 <head>
   <title>{% block title %}{% endblock %}</title>
-  <link href="{% static 'css/blog.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ STATIC_URL }}css/blog.css" type="text/css">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
 </head>
 <body>
-  <div class="container-fluid blue5">
+  <div class="container-fluid" id="blue5">
     {% block content %}
     {% endblock %}
   </div>
