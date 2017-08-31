@@ -33,9 +33,11 @@
       {% endif %}
     {% endfor %}
   {% endfor %}
-  <p>
-    <a href="{% url 'add_record' group.group.id %}">
-      new record
-    </a>
-  </p>
+  {% if host.user == currentUser %}
+    <p>
+      <a href="{% url 'add_record' group.group.id %}">
+        new record
+      </a>
+    </p>
+  {% endif %}
 {% endblock %}

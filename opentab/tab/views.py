@@ -262,6 +262,9 @@ def groupHome(request, groupId):
         balances = GroupBalance.objects.filter(group = group.group).all()
         # the following is all of the activity related to the specified group
         activities = Activity.objects.filter(group = currentGroup).all()
+        for member in members:
+            if member.status == 2:
+                host = member
         parameters = {
             'members':members,
             'records':records,
@@ -270,6 +273,7 @@ def groupHome(request, groupId):
             'currentUser':currentUser,
             'balances':balances,
             'activities':activities,
+            'host':host,
         }
         return render(request, 'tabs/group_home.html', parameters)
 
@@ -670,7 +674,7 @@ def addMembers(request, groupId):
                 group = group,
                 status = 2,
             )
-            description = currentUser.username + 'have been added to ' + group.name
+            description = currentUser.username + ' have been added to ' + group.name
             # the following is going to add a new activity record when the first member of
             # the group is created
             default_member_activty = Activity.objects.create(
