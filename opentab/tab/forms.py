@@ -26,7 +26,7 @@ class ProfileForm(forms.ModelForm):
     privacy = forms.TypedChoiceField(
         choices=split_choices, widget=forms.RadioSelect, coerce=int
     )
-    dob = forms.DateField(widget=extras.SelectDateWidget)
+    dob = forms.DateField(widget=forms.widgets.DateInput(attrs={'type':'date'}))
     class Meta:
         model = Profile
         fields = ['first_name', 'last_name', 'dob', 'city', 'state', 'phone', 'privacy']

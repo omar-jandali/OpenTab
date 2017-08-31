@@ -73,10 +73,6 @@ class Migration(migrations.Migration):
         ),
         migrations.RemoveField(
             model_name='profile',
-            name='dob',
-        ),
-        migrations.RemoveField(
-            model_name='profile',
             name='pic',
         ),
         migrations.RemoveField(
@@ -152,21 +148,6 @@ class Migration(migrations.Migration):
             model_name='notification',
             name='status',
             field=models.SmallIntegerField(default=1),
-        ),
-        migrations.AddField(
-            model_name='profile',
-            name='dob_day',
-            field=models.IntegerField(default=0),
-        ),
-        migrations.AddField(
-            model_name='profile',
-            name='dob_month',
-            field=models.IntegerField(default=0),
-        ),
-        migrations.AddField(
-            model_name='profile',
-            name='dob_year',
-            field=models.IntegerField(default=0),
         ),
         migrations.AddField(
             model_name='profile',
@@ -252,6 +233,11 @@ class Migration(migrations.Migration):
             model_name='member',
             name='user',
             field=models.ForeignKey(default=1, to=settings.AUTH_USER_MODEL),
+        ),
+        migrations.AlterField(
+            model_name='profile',
+            name='dob',
+            field=models.DateField(default='0'),
         ),
         migrations.AlterField(
             model_name='profile',

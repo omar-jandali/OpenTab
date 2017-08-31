@@ -32,4 +32,6 @@ urlpatterns = [
     url(r'^(?P<groupId>[0-9]+)/group_balance/$', views.groupTransfer, name='group_balance'),
     url(r'^accounts/$', views.accounts, name='accounts'),
     url(r'^accounts/delete$', views.accountsDelete, name='delete_accounts'),
+    # the following is to just test the sypanse api
+    url(r'^create_user_synapse$', views.createUserSynapse, name='create_user_synapse')
 ]

@@ -292,9 +292,7 @@ def profile_setup(request):
                 cd = form.cleaned_data
                 first_name = cd['first_name']
                 last_name = cd['last_name']
-                dob_month = form.cleaned_data.get("dob_month")
-                dob_day = form.cleaned_data.get("dob_day")
-                dob_year = form.cleaned_data.get("dob_year")
+                dob = cd['dob']
                 city = cd['city']
                 state = cd['state']
                 phone = cd['phone']
@@ -304,9 +302,7 @@ def profile_setup(request):
                     user = currentUser,
                     first_name = first_name,
                     last_name = last_name,
-                    dob_month = dob_month,
-                    dob_day = dob_day,
-                    dob_year = dob_year,
+                    dob = dob,
                     city = city,
                     state = state,
                     phone = phone,
