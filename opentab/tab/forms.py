@@ -4,7 +4,7 @@
 from django import forms
 from django.forms import ModelForm, extras
 from tab.models import Group, Member, Record, Transaction, Profile, UserBalance
-from tab.models import GroupBalance
+from tab.models import GroupBalance, Transfers, Accounts
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -88,3 +88,21 @@ class GroupFundingForm(forms.ModelForm):
     class Meta:
         model = GroupBalance
         fields = ['amount', 'memo', 'transfer']
+
+class TransferForm(forms.ModelForm):
+    acct_choices = (('Tabz', 'Tabz - Username'),
+                    ('Wells Fargo', 'Wells Fargo - Username'))
+    main = forms.TypedChoiceField(
+        choices=acct_choices
+    )
+    transfer = forms.TypedChoiceField(
+        choices=acct_choices
+    )
+    class Meta:
+        model = Transfers
+        fields = ['main', 'transfer', 'amount', 'memo']
+
+class LinkAccountForm(forms.ModelForm):
+    class Meta:
+        model = Accounts
+        fields = ['bank', 'name']

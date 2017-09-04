@@ -126,9 +126,26 @@ class Profile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # server
     first_name = models.CharField(max_length=25, default='first')
     last_name = models.CharField(max_length=25, default='last')
-    dob = models.DateField(default='0')
-    city = models.CharField(max_length=45)  # user
+    dob = models.DateField(default='1950-01-01')
+    city = models.CharField(max_length=45, default='city')  # user
     state = models.CharField(max_length=25, default='state')
     phone = models.BigIntegerField(default=0)  # user
     privacy = models.SmallIntegerField(default=1)  # user
+    balance = models.DecimalField(decimal_places=2, max_digits=9, default=0)
     created = models.DateTimeField(auto_now_add=True)  # server
+
+class Transfers(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    main = models.CharField(max_length=150, default='account')
+    transfer = models.CharField(max_length=150, default='accont')
+    amount = models.DecimalField(decimal_places=2, max_digits=9, default=0)
+    memo = models.CharField(max_length=200, default='memo')
+    frequency = models.SmallIntegerField(default=1)
+    status = models.SmallIntegerField(default=1)
+    create = models.DateTimeField(auto_now_add=True)
+
+class Accounts(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    bank = models.CharField(max_length=50, default='Wells Fargo')
+    name = models.CharField(max_length=50, default='Account')
+    created = models.DateTimeField(auto_now_add=True)

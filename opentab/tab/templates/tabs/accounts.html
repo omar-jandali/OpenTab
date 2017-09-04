@@ -15,7 +15,12 @@
   {% for profile in profiles %}
     <p>{{ profile.user.username }}, {{ profile.first_name }}, {{ profile.last_name }},
       {{ profile.dob }}, {{ profile.city }}, {{ profile.state }}, {{ profile.phone }},
-    {{ profile.privacy }}</p>
+      {{ profile.balance }}, {{ profile.privacy }}</p>
+  {% endfor %}
+  <h3>Transfers</h3>
+  {% for transfer in transfers %}
+    <p>{{ transfer.user }}, {{ transfer.main }}, {{ transfer.transfer }}, {{ transfer.amount }},
+    {{ transfer.memo }}</p>
   {% endfor %}
   <h3>Activity</h3>
   {% for activity in activities %}

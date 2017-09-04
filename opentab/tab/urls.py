@@ -7,11 +7,11 @@ from . import views
 # USE THEN WHEN PASSING IN LINKS.
 urlpatterns = [
     url(r'^$', views.userHome, name='home_page'),
-    url(r'^login$', views.login_page, name='login'),
+    url(r'^login$', views.loginPage, name='login'),
     url(r'^signup$', views.signup, name='signup'),
-    url(r'^logout$', views.logout_page, name='logout'),
-    url(r'^setup_profile/$', views.profile_setup, name='profile_setup'),
-    url(r'^user_balance/$', views.userTransfer, name='user_balance'),
+    url(r'^logout$', views.logoutPage, name='logout'),
+    url(r'^setup_profile/$', views.profileSetup, name='profile_setup'),
+    url(r'^transfer/$', views.transfers, name='transfer'),
     url(r'^(?P<requested>[\w+]+)/sendRequest/$', views.sendRequest, name="send_request"),
     url(r'^(?P<accepted>[\w+]+)/acceptRequest/$', views.acceptRequest, name="accept_request"),
     url(r'^createGroup/$', views.createGroup, name='create_group'),
@@ -29,9 +29,9 @@ urlpatterns = [
     url(r'^(?P<groupId>[0-9]+)/(?P<recordId>[0-9]+)/add_transaction/$',
         views.addTransaction, name='add_transactions'),
     url(r'^group/(?P<groupId>[0-9]+)/$', views.groupHome, name='group_home'),
-    url(r'^(?P<groupId>[0-9]+)/group_balance/$', views.groupTransfer, name='group_balance'),
     url(r'^accounts/$', views.accounts, name='accounts'),
     url(r'^accounts/delete$', views.accountsDelete, name='delete_accounts'),
+    url(r'^link_account/$', views.linkAccount, name='link_account'),
     # the following is to just test the sypanse api
-    url(r'^create_user_synapse$', views.createUserSynapse, name='create_user_synapse')
+    # url(r'^create_user_synapse$', views.createUserSynapse, name='create_user_synapse')
 ]
