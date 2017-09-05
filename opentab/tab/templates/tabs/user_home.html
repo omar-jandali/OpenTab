@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h2>{{ currentUser.username }} -- Balance:{{ total_amount }}</h2>
+  <h2>{{ currentUser.username }} -- Balance:{{ profile.balance }}</h2>
   <h3><a href="{% url 'profile_setup' %}">profile</a></h3>
   <h3><a href="{% url 'accounts' %}">accounts</a></h3>
-  <h3><a href="{% url 'user_balance' %}">transfer money (PayPal)</a></h3>
+  <h3><a href="{% url 'transfer' %}">transfer money</a></h3>
+  <h3><a href="{% url 'link_account' %}">Link Account</a></h3>
   <form action="" method="POST">
     {% csrf_token %}
     <input type="text" name="searched">
@@ -64,9 +65,11 @@
       <p>{{ friend.user }}</p>
     {% endfor %}
   {% endif %}
-  <h3>Personal Balances</h3>
-  {% for balance in userBalances %}
-    <p>{{ balance.user }}, {{ balance.amount }}, {{ balance.memo }}, {{ balance.transfer }}</p>
+  <h3>Transfers</h3>
+  {% for transfer in transfers %}
+    <p>{{ transfer.main }}, {{ transfer.transfer }}, {{ transfer.amount }},
+      {{ transfer.memo }}
+    </p>
   {% endfor %}
   <h3>Groups</h3>
   <ul>

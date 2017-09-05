@@ -13,12 +13,17 @@ from random import randint
 from decimal import Decimal
 
 from .models import Group, User, Member, Record, Transaction, Request, Friend, Profile
-from .models import UserBalance, GroupBalance, Activity
+from .models import UserBalance, GroupBalance, Activity, Accounts, Transfers
 
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
 from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
 from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm, ProfileForm
-from .forms import IndividualFundingForm, GroupFundingForm
+from .forms import IndividualFundingForm, GroupFundingForm, TransferForm, LinkAccountForm
+
+import json
+
+import requests
+import urllib.request
 
 # The signup method is where all of the processing and display of the users signup
 # screen. The form asks for username, password, verify the password, and the email
@@ -69,8 +74,57 @@ def signup(request):
         }
         return render(request, 'tabs/signup.html', parameters)
 
+# this is a page that the user is redirected to once they register or choose to update
+# through the main page. This is where the user will create their profile by providing
+# specified informaiton.
+def profileSetup(request):
+    if 'username' not in request.session:
+        return redirect('login')
+    else:
+        # the following is just going to grab the currently logged in user and
+        # save the profile information to the appropriate user
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        # the following is the provessing for the form where the user entered
+        # the profile informaiton
+        if request.method == 'POST':
+            form = ProfileForm(request.POST)
+            if form.is_valid():
+                cd = form.cleaned_data
+                first_name = cd['first_name']
+                last_name = cd['last_name']
+                dob = cd['dob']
+                city = cd['city']
+                state = cd['state']
+                phone = cd['phone']
+                privacy = cd['privacy']
+                # this is the new record that is going to be created and saved
+                new_profile = Profile.objects.create(
+                    user = currentUser,
+                    first_name = first_name,
+                    last_name = last_name,
+                    dob = dob,
+                    city = city,
+                    state = state,
+                    phone = phone,
+                    privacy = privacy,
+                )
+                createUserSynapse(request)
+                return redirect('home_page')
+        else:
+            # this is what is going to be saved into the html file and used to
+            # render the file
+            form = ProfileForm()
+            message = 'fill out form below'
+            parameters = {
+                'form':form,
+                'currentUser':currentUser,
+                'message':message,
+            }
+            return render(request, 'tabs/profile_setup.html', parameters)
+
 # The following is the method that will display and process the users login page
-def login_page(request):
+def loginPage(request):
     # the following will check to see if the form is submitted or not.
     if request.method == 'POST':
         form = LoginForm(request.POST)
@@ -109,7 +163,7 @@ def login_page(request):
 
 # the following is what will take care of the logout portion of the project
 # this comment is to test and make sure that the new gitlab remote is working
-def logout_page(request):
+def logoutPage(request):
     # the following 3 lines will check to see if there is a username in the session
     # which means that there is someone logged in and it will give them access to
     # opentab.
@@ -152,6 +206,14 @@ def userHome(request):
         # the following is going to pull the list of all the activty related to
         # the logged in user
         activities = Activity.objects.filter(user = currentUser).all()
+
+        transfers = Transfers.objects.filter(user = currentUser).all()
+
+        profiles = Profile.objects.all()
+        for profile in profiles:
+            if profile.user == currentUser:
+                profile = profile
+
         # the following will initiate the starting amount as zero so that the
         # calculation is not based on previously stored number
         total_amount = 0
@@ -197,6 +259,8 @@ def userHome(request):
                             'userBalances':userBalances,
                             'total_amount':total_amount,
                             'activities':activities,
+                            'transfers':transfers,
+                            'profile':profile,
                         }
                         return render(request, 'tabs/user_home.html', parameters)
                     else:
@@ -216,6 +280,8 @@ def userHome(request):
                             'userBalances':userBalances,
                             'total_amount':total_amount,
                             'activities':activities,
+                            'trasfers':transfers,
+                            'profile':profile,
                         }
                 return render(request, 'tabs/user_home.html', parameters)
         else:
@@ -232,6 +298,8 @@ def userHome(request):
                 'userBalances':userBalances,
                 'total_amount':total_amount,
                 'activities':activities,
+                'transfers':transfers,
+                'profile':profile,
             }
             return render(request, 'tabs/user_home.html', parameters)
     else:
@@ -273,82 +341,87 @@ def groupHome(request, groupId):
         }
         return render(request, 'tabs/group_home.html', parameters)
 
-# this is a page that the user is redirected to once they register or choose to update
-# through the main page. This is where the user will create their profile by providing
-# specified informaiton.
-def profile_setup(request):
+# within the following view method, this will allow the user to create a transfer of money
+# between the user's linked external bank account though Synapse and the synpase sub-account
+# that will hold the money that is usable within the application... It will take that transfer
+# and create a record for each transfer within the activity table and the balance table
+def transfers(request):
+    # the following will check to see if there is a user currently loged in and redirect
+    # if they are not logged in
     if 'username' not in request.session:
         return redirect('login')
     else:
-        # the following is just going to grab the currently logged in user and
-        # save the profile information to the appropriate user
+        # if the user is logged in,the next step would be to grab the logged in username
+        # and get the users record thtat will be used by this method.
         username = request.session['username']
         currentUser = User.objects.get(username = username)
-        # the following is the provessing for the form where the user entered
-        # the profile informaiton
+        # the following grabs all the profiles that will be used later on in the method.
+        # THe profile is where the users in app balance is stored and updated, We grab all
+        # of the records so that later in the method, we can check and see if they logged in
+        # user has an existing profile, or if there is a new to create a new profile to store
+        # the users balance.
+        profiles = Profile.objects.all()
+        # the following is simple form processing where the information collected from the form
+        # is stored in variables.
         if request.method == 'POST':
-            form = ProfileForm(request.POST)
+            form = TransferForm(request.POST)
             if form.is_valid():
                 cd = form.cleaned_data
-                first_name = cd['first_name']
-                last_name = cd['last_name']
-                dob = cd['dob']
-                city = cd['city']
-                state = cd['state']
-                phone = cd['phone']
-                privacy = cd['privacy']
-                # this is the new record that is going to be created and saved
-                new_profile = Profile.objects.create(
-                    user = currentUser,
-                    first_name = first_name,
-                    last_name = last_name,
-                    dob = dob,
-                    city = city,
-                    state = state,
-                    phone = phone,
-                    privacy = privacy,
-                )
-                return redirect('home_page')
-        else:
-            # this is what is going to be saved into the html file and used to
-            # render the file
-            form = ProfileForm()
-            message = 'fill out form below'
-            parameters = {
-                'form':form,
-                'currentUser':currentUser,
-                'message':message,
-            }
-            return render(request, 'tabs/profile_setup.html', parameters)
-
-# this is how the user will be able to transfer money between the users paypal
-# account and the users opentab account.
-def userTransfer(request):
-    if 'username' not in request.session:
-        return redirect('login')
-    else:
-        username = request.session['username']
-        currentUser = User.objects.get(username = username)
-        # the following is where the money transfer form is going to be processed
-        # and saved for the user so that the current balance can be calculated
-        if request.method == 'POST':
-            form = IndividualFundingForm(request.POST)
-            if form.is_valid():
-                cd = form.cleaned_data
+                main = cd['main']
+                transfer = cd['transfer']
                 amount = cd['amount']
                 memo = cd['memo']
-                transfer = cd['transfer']
-                # the is the new userBalance object that is going to be saved
-                new_balance = UserBalance.objects.create(
+                # the following is a new transfer object that stored the transfer within the database
+                new_transfer = Transfers.objects.create(
                     user = currentUser,
+                    main = main,
+                    transfer = transfer,
                     amount = amount,
                     memo = memo,
-                    transfer = transfer,
+                    frequency = 1,
+                    status = 1,
                 )
+                # this is where the profile proccessing is happening...
+                # the forst for statement will go through each profile and see if the current
+                # user has a profile, if there is a profile, then it is stored in a variable for
+                # later use
+                for profile in profiles:
+                    if profile.user.username == currentUser.username:
+                        currentProfile = profile
+                # the following will  take the current profile of the user and check a few
+                # parameters to execute neccessary code
+                if currentProfile:
+                    # the following is going to grab the currently saved balance that exists
+                    # within the users profile balance
+                    balance = currentProfile.balance
+                    # the following two if statments, will check to see if money is being
+                    # transfered to or from the tabz account or linked bank account.
+                    # if it is going to the tabz account, the users overall app balance will
+                    # up by adding current balance with amount specified. The opposite goes for
+                    # money being transfered out of the Tabz account
+                    if main == 'Tabz':
+                        currentProfile.balance = balance - amount
+                        currentProfile.save()
+                        message = 'You have transfered ' + str(amount) + ' from your Tabz account to main account'
+                    if transfer == 'Tabz':
+                        currentProfile.balance = balance + amount
+                        currentProfile.save()
+                        message = 'You have transfered ' + str(amount) + ' from your main account to Tabz account'
+                    # the following is the new activity record that is created after every single
+                    # transfer that goes on. THis allows the user to see exactly what kind
+                    # of transfer happened and details about that transfer in the activity section
+                    new_activity = Activity.objects.create(
+                        user = currentUser,
+                        description = message,
+                        status = 1,
+                        category = 1,
+                    )
                 return redirect('home_page')
         else:
-            form = IndividualFundingForm()
-            message = 'please fill out the form below'
+            # this is the processing that goes on if the form was not submitted. this is where
+            # everything is passed to the form page.
+            form = TransferForm()
+            message = 'please fill out the below form'
             parameters = {
                 'form':form,
                 'currentUser':currentUser,
@@ -356,150 +429,42 @@ def userTransfer(request):
             }
             return render(request, 'tabs/user_balance.html', parameters)
 
-# group transfer is where the majority of the balancing is going to be taking place.
-# This is where each group members balances are going to be tracked and recorded.
-# This is also where the updating of each members total baolance within the group
-# will be calculated and recorded.
-def groupTransfer(request, groupId):
+# this method is where the user will be able to link an external bank account to the
+# app and transfer money within the app from. I wrote this method to just test the
+# transfer method. Once the Synapse API is up and running, this part will be automated
+# and there is will be no need for this.
+def linkAccount(request):
+    # the following will check to see if there is a user currently loged in and redirect
+    # if they are not logged in
     if 'username' not in request.session:
         return redirect('login')
     else:
-        # there are a lot of query set that are required to run this method because
-        # of the complexity.
-        # The first two are going to grab the user that is looged in
+        # this will grab the username that is logged in and get the users record objects
+        # to use within this methods.
         username = request.session['username']
         currentUser = User.objects.get(username = username)
-        # the following is the group that is currently selected and used to display
-        # relative informaiton
-        group = Group.objects.get(id = groupId)
-        # the following will grab all of the members that are a part of the current
-        # group so that the correct info can be updated and stored
-        members = Member.objects.filter(group = group).all()
-        # balances will grab all of the userBalances for the currently logged in user
-        # this is what will allow the users balance to keep up to date.
-        # This will be updated every time that the user transfers money between the
-        # main account and the group account.
-        balances = UserBalance.objects.filter(user = currentUser).all()
-        # Like the userTransfer, the following lines will determine what the most up
-        # to date balance is for the current member and take that calculated amount
-        # so that it can be updated and saved into the members funding column.
-        total_user_balance = 0
-        for balance in balances:
-            # this means that the user is sending money from the group account to
-            # individual account
-            # money will be subtracked from the major account
-            if balance.transfer == 1:
-                total_user_balance = total_user_balance - balance.amount
-            # this means that the user is sending money from the individual account to
-            # group account
-            # money will be added from the major account
-            if balance.transfer == 2:
-                total_user_balance = total_user_balance + balance.amount
-        for member in members:
-            if member.user == currentUser:
-                total_group_balance = member.funding
-        # balances = UserBalance.objects.get(user = currentUser)
+        # the following is a very simple and basic for processing section.
         if request.method == 'POST':
-            # this is where the group transfer form will be processed and filled out
-            form = GroupFundingForm(request.POST)
+            form = LinkAccountForm(request.POST)
             if form.is_valid():
                 cd = form.cleaned_data
-                amount = cd['amount']
-                memo = cd['memo']
-                transfer = cd['transfer']
-                print(total_user_balance)
-                print(total_group_balance)
-                print(amount)
-                # the following is validation to make sure that there is enough
-                # funding in the main account to transfer into the group account
-                # when sending money from the individual account to group acccout
-                if transfer == 2:
-                    if total_user_balance < amount:
-                        form = GroupFundingForm()
-                        message = 'not enough funds in account'
-                        parameters = {
-                            'form':form,
-                            'currentUser':currentUser,
-                            'message':message,
-                            'group':group,
-                        }
-                        return render(request, 'tabs/group_balance.html', parameters)
-                # the following is validation to make sure that there is enough
-                # funding in the group account to transfer into the individual account
-                # when sending money from the group account to individual acccout
-                if transfer == 1:
-                    if total_group_balance < amount:
-                        form = GroupFundingForm()
-                        message = 'not enough funds in account'
-                        parameters = {
-                            'form':form,
-                            'currentUser':currentUser,
-                            'message':message,
-                            'group':group,
-                        }
-                        return render(request, 'tabs/group_balance.html', parameters)
-                # this is where a new balance will be recorded to take into account
-                # this new balance object when calculate the total balance for the
-                # current user that is logged in
-                new_group_balance = GroupBalance.objects.create(
+                bank = cd['bank']
+                name = cd['name']
+                new_account = Accounts.objects.create(
                     user = currentUser,
-                    group = group,
-                    amount = amount,
-                    memo = memo,
-                    transfer = transfer,
+                    bank = bank,
+                    name = name,
                 )
-                # every member in a group has a total balance that they have within
-                # the group to see how much each person has to contributed
-                # This will be updated and saved with every group transaction and
-                # money transfer that occurs
-                for member in members:
-                    if member.user == currentUser:
-                        funding = member.funding
-                        update_member = member
-                        if transfer == 1:
-                            update_member.funding = funding - amount
-                        if transfer == 2:
-                            update_member.funding = funding + amount
-                        update_member.save()
-                # this was a slightly trick part. WHen you transfer money
-                # from group account to individual account or other way arround
-                # and a new balance is created and added to your balance statement,
-                # it has to be inverted becasue if you can money out of one account
-                # and pout it in the other account one looses money and the other
-                # once gains money. THis is was the way for me to do that...
-
-                # the following will make sure that when money is taken out of the
-                # group account, the value is added to the individual account rahter
-                # than subtracked
-                if transfer == 1:
-                    new_user_balance = UserBalance.objects.create(
-                        user = currentUser,
-                        amount = amount,
-                        memo = memo,
-                        transfer = 2
-                    )
-                # the following will make sure that when money is taken out of the
-                # individual account, the value is added to the group account rahter
-                # than subtracked
-                if transfer == 2:
-                    new_user_balance = UserBalance.objects.create(
-                        user = currentUser,
-                        amount = amount,
-                        memo = memo,
-                        transfer = 1
-                    )
-                return redirect('group_home', groupId=group.id)
+                return redirect('home_page')
         else:
-            # this is what will display the original html file and the parameters
-            form = GroupFundingForm()
-            message = 'Fill out the form'
+            form = LinkAccountForm()
+            message = 'please fill out the entire form'
             parameters = {
                 'form':form,
                 'currentUser':currentUser,
                 'message':message,
-                'group':group,
             }
-            return render(request, 'tabs/group_balance.html', parameters)
+            return render(request, 'tabs/link_account.html', parameters)
 
 # the following method managed the sending of friend requests to other users and
 # storing a record of that in the database.
@@ -1056,6 +1021,8 @@ def accounts(request):
     friends = Friend.objects.all()
     profiles = Profile.objects.all()
     activities = Activity.objects.all()
+    accounts = Accounts.objects.all()
+    transfers = Transfers.objects.all()
     if 'username' in request.session:
         currentUser = request.session['username']
     else:
@@ -1071,6 +1038,8 @@ def accounts(request):
         'friends':friends,
         'profiles':profiles,
         'activities':activities,
+        'accounts':accounts,
+        'transfers':transfers,
     }
     return render(request, 'tabs/accounts.html', params)
     # return render(request, 'tabs/addMembers.html', params)
@@ -1106,3 +1075,256 @@ def SplitEven(record, amount):
     # space.
     rounded_amount = round(split_amount, 2)
     return rounded_amount
+
+def createUserSynapse(request):
+    data = {
+        "logins":[
+            {
+                "email":"test@test.com",
+            }
+        ],
+        "phone_numbers":[
+            "123.456.7890",
+            "test@test.com",
+        ],
+        "legal_names":[
+            "Test name",
+        ],
+        "extras":{
+            "supp_id":"asdfe515641e56wg",
+            "cip_tag":12,
+            "is_business":False,
+        }
+    }
+
+    req = urllib.request.Request('http://uat-api.synapsefi.com')
+    req.add_header('X-SP-GATEWAY', 'client_id_asdfeavea561va9685e1gre5ara|client_secret_4651av5sa1edgvawegv1a6we1v5a6s51gv')
+    req.add_header('X-SP-USER-IP', '127.0.0.1')
+    req.add_header('X-SP-USER', '| ge85a41v8e16v1a618gea164g65')
+    req.add_header('Content-Type', 'application/json')
+
+    print(req.headers)
+
+    response = urllib.request.urlopen(req, json.dumps(data))
+
+    print(response)
+
+    return render(reqest, 'tabs/create_user_synapse.html', response)
+
+    # url = 'http://uat-api.synapsefi.com'
+    # headers = {
+    #     'X-SP-GATEWAY' : 'client_id_asdfeavea561va9685e1gre5ara|client_secret_4651av5sa1edgvawegv1a6we1v5a6s51gv',
+    #     'X-SP-USER-IP' : '127.0.0.1',
+    #     'X-SP-USER' : '| ge85a41v8e16v1a618gea164g65',
+    #     'Content-Type' : 'application/json',
+    # }
+    # payload = {
+    #     "logins":[
+    #         {
+    #             "email":"test@test.com",
+    #         }
+    #     ],
+    #     "phone_numbers":[
+    #         "123.456.7890",
+    #         "test@test.com",
+    #     ],
+    #     "legal_names":[
+    #         "Test name",
+    #     ],
+    #     "extras":{
+    #         "supp_id":"asdfe515641e56wg",
+    #         "cip_tag":12,
+    #         "is_business":False,
+    #     }
+    # }
+    # print(url)
+    # print(headers)
+    # print(payload)
+    # call = requests.post(url, json=payload, headers=headers)
+    # # response = json.loads(call.text)
+    # # call = call.json()
+    # print (call)
+    # print(call.content)
+    # return render(request, 'tabs/create_user_synapse.html', call)
+    # # return json.loads(call.text)
+
+# group transfer is where the majority of the balancing is going to be taking place.
+# This is where each group members balances are going to be tracked and recorded.
+# This is also where the updating of each members total baolance within the group
+# will be calculated and recorded.
+# def groupTransfer(request, groupId):
+#     if 'username' not in request.session:
+#         return redirect('login')
+#     else:
+#         # there are a lot of query set that are required to run this method because
+#         # of the complexity.
+#         # The first two are going to grab the user that is looged in
+#         username = request.session['username']
+#         currentUser = User.objects.get(username = username)
+#         # the following is the group that is currently selected and used to display
+#         # relative informaiton
+#         group = Group.objects.get(id = groupId)
+#         # the following will grab all of the members that are a part of the current
+#         # group so that the correct info can be updated and stored
+#         members = Member.objects.filter(group = group).all()
+#         # balances will grab all of the userBalances for the currently logged in user
+#         # this is what will allow the users balance to keep up to date.
+#         # This will be updated every time that the user transfers money between the
+#         # main account and the group account.
+#         balances = UserBalance.objects.filter(user = currentUser).all()
+#         # Like the userTransfer, the following lines will determine what the most up
+#         # to date balance is for the current member and take that calculated amount
+#         # so that it can be updated and saved into the members funding column.
+#         total_user_balance = 0
+#         for balance in balances:
+#             # this means that the user is sending money from the group account to
+#             # individual account
+#             # money will be subtracked from the major account
+#             if balance.transfer == 1:
+#                 total_user_balance = total_user_balance - balance.amount
+#             # this means that the user is sending money from the individual account to
+#             # group account
+#             # money will be added from the major account
+#             if balance.transfer == 2:
+#                 total_user_balance = total_user_balance + balance.amount
+#         for member in members:
+#             if member.user == currentUser:
+#                 total_group_balance = member.funding
+#         # balances = UserBalance.objects.get(user = currentUser)
+#         if request.method == 'POST':
+#             # this is where the group transfer form will be processed and filled out
+#             form = GroupFundingForm(request.POST)
+#             if form.is_valid():
+#                 cd = form.cleaned_data
+#                 amount = cd['amount']
+#                 memo = cd['memo']
+#                 transfer = cd['transfer']
+#                 print(total_user_balance)
+#                 print(total_group_balance)
+#                 print(amount)
+#                 # the following is validation to make sure that there is enough
+#                 # funding in the main account to transfer into the group account
+#                 # when sending money from the individual account to group acccout
+#                 if transfer == 2:
+#                     if total_user_balance < amount:
+#                         form = GroupFundingForm()
+#                         message = 'not enough funds in account'
+#                         parameters = {
+#                             'form':form,
+#                             'currentUser':currentUser,
+#                             'message':message,
+#                             'group':group,
+#                         }
+#                         return render(request, 'tabs/group_balance.html', parameters)
+#                 # the following is validation to make sure that there is enough
+#                 # funding in the group account to transfer into the individual account
+#                 # when sending money from the group account to individual acccout
+#                 if transfer == 1:
+#                     if total_group_balance < amount:
+#                         form = GroupFundingForm()
+#                         message = 'not enough funds in account'
+#                         parameters = {
+#                             'form':form,
+#                             'currentUser':currentUser,
+#                             'message':message,
+#                             'group':group,
+#                         }
+#                         return render(request, 'tabs/group_balance.html', parameters)
+#                 # this is where a new balance will be recorded to take into account
+#                 # this new balance object when calculate the total balance for the
+#                 # current user that is logged in
+#                 new_group_balance = GroupBalance.objects.create(
+#                     user = currentUser,
+#                     group = group,
+#                     amount = amount,
+#                     memo = memo,
+#                     transfer = transfer,
+#                 )
+#                 # every member in a group has a total balance that they have within
+#                 # the group to see how much each person has to contributed
+#                 # This will be updated and saved with every group transaction and
+#                 # money transfer that occurs
+#                 for member in members:
+#                     if member.user == currentUser:
+#                         funding = member.funding
+#                         update_member = member
+#                         if transfer == 1:
+#                             update_member.funding = funding - amount
+#                         if transfer == 2:
+#                             update_member.funding = funding + amount
+#                         update_member.save()
+#                 # this was a slightly trick part. WHen you transfer money
+#                 # from group account to individual account or other way arround
+#                 # and a new balance is created and added to your balance statement,
+#                 # it has to be inverted becasue if you can money out of one account
+#                 # and pout it in the other account one looses money and the other
+#                 # once gains money. THis is was the way for me to do that...
+#
+#                 # the following will make sure that when money is taken out of the
+#                 # group account, the value is added to the individual account rahter
+#                 # than subtracked
+#                 if transfer == 1:
+#                     new_user_balance = UserBalance.objects.create(
+#                         user = currentUser,
+#                         amount = amount,
+#                         memo = memo,
+#                         transfer = 2
+#                     )
+#                 # the following will make sure that when money is taken out of the
+#                 # individual account, the value is added to the group account rahter
+#                 # than subtracked
+#                 if transfer == 2:
+#                     new_user_balance = UserBalance.objects.create(
+#                         user = currentUser,
+#                         amount = amount,
+#                         memo = memo,
+#                         transfer = 1
+#                     )
+#                 return redirect('group_home', groupId=group.id)
+#         else:
+#             # this is what will display the original html file and the parameters
+#             form = GroupFundingForm()
+#             message = 'Fill out the form'
+#             parameters = {
+#                 'form':form,
+#                 'currentUser':currentUser,
+#                 'message':message,
+#                 'group':group,
+#             }
+#             return render(request, 'tabs/group_balance.html', parameters)
+
+
+# this is how the user will be able to transfer money between the users paypal
+# account and the users opentab account.
+# def userTransfer(request):
+#     if 'username' not in request.session:
+#         return redirect('login')
+#     else:
+#         username = request.session['username']
+#         currentUser = User.objects.get(username = username)
+#         # the following is where the money transfer form is going to be processed
+#         # and saved for the user so that the current balance can be calculated
+#         if request.method == 'POST':
+#             form = IndividualFundingForm(request.POST)
+#             if form.is_valid():
+#                 cd = form.cleaned_data
+#                 amount = cd['amount']
+#                 memo = cd['memo']
+#                 transfer = cd['transfer']
+#                 # the is the new userBalance object that is going to be saved
+#                 new_balance = UserBalance.objects.create(
+#                     user = currentUser,
+#                     amount = amount,
+#                     memo = memo,
+#                     transfer = transfer,
+#                 )
+#                 return redirect('home_page')
+#         else:
+#             form = IndividualFundingForm()
+#             message = 'please fill out the form below'
+#             parameters = {
+#                 'form':form,
+#                 'currentUser':currentUser,
+#                 'message':message,
+#             }
+#             return render(request, 'tabs/user_balance.html', parameters)
