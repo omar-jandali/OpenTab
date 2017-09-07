@@ -25,6 +25,20 @@ import json
 import requests
 import urllib.request
 
+import os
+from synapse_pay_rest import Client
+
+args = {
+    'client_id': 'client_id_SOJMCFkagKAtvTpem0ZWPRbwznQ2yc5h0dN6YiBl',
+    'client_secret': 'client_secret_muUbizcGBq2oXKQTMEphg0S4tOyH5xLYNsPkC3IF',
+    'fingerprint': '599378e9a63ec2002d7dd48b',
+    'ip_address': '127.0.0.1',
+    'development_mode':True,
+    'logging':False
+}
+
+client = Client(**args)
+
 # The signup method is where all of the processing and display of the users signup
 # screen. The form asks for username, password, verify the password, and the email
 def signup(request):
@@ -1077,39 +1091,67 @@ def SplitEven(record, amount):
     return rounded_amount
 
 def createUserSynapse(request):
-    data = {
-        "logins":[
-            {
-                "email":"test@test.com",
-            }
-        ],
-        "phone_numbers":[
-            "123.456.7890",
-            "test@test.com",
-        ],
-        "legal_names":[
-            "Test name",
-        ],
-        "extras":{
-            "supp_id":"asdfe515641e56wg",
-            "cip_tag":12,
-            "is_business":False,
-        }
+    args = {
+        'email': 'hello@synapsepay.com',
+        'phone_number': '555-555-5555',
+        'legal_name': 'Hello McHello',
+        'note': ':)',  # optional
+        'supp_id': '123abc',  # optional
+        'is_business': True,
+        'cip_tag': 1
     }
 
-    req = urllib.request.Request('http://uat-api.synapsefi.com')
-    req.add_header('X-SP-GATEWAY', 'client_id_asdfeavea561va9685e1gre5ara|client_secret_4651av5sa1edgvawegv1a6we1v5a6s51gv')
-    req.add_header('X-SP-USER-IP', '127.0.0.1')
-    req.add_header('X-SP-USER', '| ge85a41v8e16v1a618gea164g65')
-    req.add_header('Content-Type', 'application/json')
+    user = User.create(client, **args)
+    print(user)
 
-    print(req.headers)
 
-    response = urllib.request.urlopen(req, json.dumps(data))
 
-    print(response)
 
-    return render(reqest, 'tabs/create_user_synapse.html', response)
+
+
+
+
+
+
+
+
+
+
+
+
+    # data = {
+    #     "logins":[
+    #         {
+    #             "email":"test@test.com",
+    #         }
+    #     ],
+    #     "phone_numbers":[
+    #         "123.456.7890",
+    #         "test@test.com",
+    #     ],
+    #     "legal_names":[
+    #         "Test name",
+    #     ],
+    #     "extras":{
+    #         "supp_id":"asdfe515641e56wg",
+    #         "cip_tag":12,
+    #         "is_business":False,
+    #     }
+    # }
+    #
+    # req = urllib.request.Request('http://uat-api.synapsefi.com')
+    # req.add_header('X-SP-GATEWAY', 'client_id_asdfeavea561va9685e1gre5ara|client_secret_4651av5sa1edgvawegv1a6we1v5a6s51gv')
+    # req.add_header('X-SP-USER-IP', '127.0.0.1')
+    # req.add_header('X-SP-USER', '| ge85a41v8e16v1a618gea164g65')
+    # req.add_header('Content-Type', 'application/json')
+    #
+    # print(req.headers)
+    #
+    # response = urllib.request.urlopen(req, json.dumps(data))
+    #
+    # print(response)
+    #
+    # return render(reqest, 'tabs/create_user_synapse.html', response)
 
     # url = 'http://uat-api.synapsefi.com'
     # headers = {
