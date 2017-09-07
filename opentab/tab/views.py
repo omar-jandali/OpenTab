@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -27,6 +27,7 @@ import urllib.request
 
 import os
 from synapse_pay_rest import Client
+from synapse_pay_rest import User as SynapseUser
 
 args = {
     'client_id': 'client_id_SOJMCFkagKAtvTpem0ZWPRbwznQ2yc5h0dN6YiBl',
@@ -37,7 +38,8 @@ args = {
     'logging':False
 }
 
-client = Client(**args)
+clients = Client(**args)
+print(clients)
 
 # The signup method is where all of the processing and display of the users signup
 # screen. The form asks for username, password, verify the password, and the email
@@ -1091,7 +1093,7 @@ def SplitEven(record, amount):
     return rounded_amount
 
 def createUserSynapse(request):
-    args = {
+    argss = {
         'email': 'hello@synapsepay.com',
         'phone_number': '555-555-5555',
         'legal_name': 'Hello McHello',
@@ -1101,8 +1103,9 @@ def createUserSynapse(request):
         'cip_tag': 1
     }
 
-    user = User.create(client, **args)
+    user = SynapseUser.create(clients, **argss)
     print(user)
+    return redirect('accounts')
 
 
 
