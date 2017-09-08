@@ -1104,8 +1104,19 @@ def createUserSynapse(request):
     }
 
     user = SynapseUser.create(clients, **argss)
-    print(user)
-    return redirect('accounts')
+    print(user.json)
+    response = json.loads(user)
+    if response:
+        _id = response['_id']
+        name = response.client['name']
+        link = response._links.self['href']
+        cip = response.extra['cip_tag']
+        supp = response.extra['supp_id']
+        print(name)
+        print(_id)
+        print(link)
+        print(cip)
+        print(supp)
 
 
 
