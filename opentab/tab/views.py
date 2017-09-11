@@ -21,9 +21,7 @@ from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm, Profil
 from .forms import IndividualFundingForm, GroupFundingForm, TransferForm, LinkAccountForm
 
 import json
-
 import requests
-import urllib.request
 
 import os
 from synapse_pay_rest import Client
@@ -1093,32 +1091,51 @@ def SplitEven(record, amount):
     return rounded_amount
 
 def createUserSynapse(request):
-    argss = {
-        'email': 'hello@synapsepay.com',
-        'phone_number': '555-555-5555',
-        'legal_name': 'Hello McHello',
-        'note': ':)',  # optional
-        'supp_id': '123abc',  # optional
-        'is_business': True,
-        'cip_tag': 1
-    }
+    if 'username' not in request.session:
+        return redirect('login_page')
+    else:
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        userProfile = Profile.objects.get(user = currentUser)
+        email = currentUser.email
+        phone = userProfile.phone
+        legal_name = userProfile.first_name + ' ' + userProfile.last_name
+        supp_id = generateReferenceNumber()
+        cip = currentUser.id
 
-    user = SynapseUser.create(clients, **argss)
-    print(user.json)
-    response = json.loads(user)
-    if response:
-        _id = response['_id']
-        name = response.client['name']
-        link = response._links.self['href']
-        cip = response.extra['cip_tag']
-        supp = response.extra['supp_id']
-        print(name)
-        print(_id)
-        print(link)
-        print(cip)
-        print(supp)
+        argss = {
+            'email': str(email),
+            'phone_number': str(phone),
+            'legal_name': str(legal_name),
+            'note': ':)',  # optional
+            'supp_id': str(supp_id),  # optional
+            'is_business': False,
+            'cip_tag': cip
+        }
 
+        user = SynapseUser.create(clients, **argss)
+        print(user.json)
+        print(type(user.json))
+        response = user.json
+        if response:
+            _id = response['_id']
+            name = response['client']['name']
+            link = response['_links']['self']['href']
+            cip = response['extra']['cip_tag']
+            supp = response['extra']['supp_id']
+            print(name)
+            print(_id)
+            print(link)
+            print(cip)
+            print(supp)
 
+# def CurrentUser(request):
+#     if 'username' not in request.session:
+#         return redirect('login_page')
+#     else:
+#         username = request.session['username']
+#         currentUser = User.objects.get(username = username)
+#         return currentUser
 
 
 
