@@ -132,6 +132,7 @@ class Profile(models.Model):
     phone = models.BigIntegerField(default=0)  # user
     privacy = models.SmallIntegerField(default=1)  # user
     balance = models.DecimalField(decimal_places=2, max_digits=9, default=0)
+    synapse_id = models.CharField(max_length=220, default=000000)
     created = models.DateTimeField(auto_now_add=True)  # server
 
 class Transfers(models.Model):

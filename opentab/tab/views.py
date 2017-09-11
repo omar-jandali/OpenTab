@@ -1090,19 +1090,31 @@ def SplitEven(record, amount):
     rounded_amount = round(split_amount, 2)
     return rounded_amount
 
+# the following def is going to be used in order to create a new user within the
+# synapse api which is what is going to allow the user to link bank accounts
+# and transfer money between different users.
 def createUserSynapse(request):
+    #the following is going to check and make sure that there is someone logged in
+    # before any action is taken.. User will be redirected to login screen if there
+    # is no one logged in
     if 'username' not in request.session:
         return redirect('login_page')
     else:
+        # if user is logged in it will grab the user and profile objects for the
+        # person that is currently logged in
         username = request.session['username']
         currentUser = User.objects.get(username = username)
         userProfile = Profile.objects.get(user = currentUser)
+        # the following 5 lines will be used to grab information that is required
+        # to be send with the synapse api call to create a user
         email = currentUser.email
         phone = userProfile.phone
         legal_name = userProfile.first_name + ' ' + userProfile.last_name
         supp_id = generateReferenceNumber()
         cip = currentUser.id
 
+        # this is all of the required arguments that are needed in order to create
+        # a new user within the synapse api and later on linked with bank accounts
         argss = {
             'email': str(email),
             'phone_number': str(phone),
@@ -1113,21 +1125,24 @@ def createUserSynapse(request):
             'cip_tag': cip
         }
 
+        # the next line is what actually sends the request and returns a json response
+        # object that can be parsed. THis gives the option of saving important
+        # information from the response that will be stored in the database
         user = SynapseUser.create(clients, **argss)
         print(user.json)
-        print(type(user.json))
+        # this makes sure the response is set in json before it is parsed and data
+        # from teh response is stored
         response = user.json
+        # the if statements makes sure there is a json response that was returned
         if response:
+            # the new synapse id of the person that was created is stored for later search
             _id = response['_id']
-            name = response['client']['name']
-            link = response['_links']['self']['href']
-            cip = response['extra']['cip_tag']
-            supp = response['extra']['supp_id']
-            print(name)
-            print(_id)
-            print(link)
-            print(cip)
-            print(supp)
+            # the id is then also saved inthe users profile within the database to
+            # make sure that it is saved within the local database.
+            profile = userProfile
+            profile.synapse_id = _id
+            profile.save()
+
 
 # def CurrentUser(request):
 #     if 'username' not in request.session:
@@ -1136,90 +1151,6 @@ def createUserSynapse(request):
 #         username = request.session['username']
 #         currentUser = User.objects.get(username = username)
 #         return currentUser
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # data = {
-    #     "logins":[
-    #         {
-    #             "email":"test@test.com",
-    #         }
-    #     ],
-    #     "phone_numbers":[
-    #         "123.456.7890",
-    #         "test@test.com",
-    #     ],
-    #     "legal_names":[
-    #         "Test name",
-    #     ],
-    #     "extras":{
-    #         "supp_id":"asdfe515641e56wg",
-    #         "cip_tag":12,
-    #         "is_business":False,
-    #     }
-    # }
-    #
-    # req = urllib.request.Request('http://uat-api.synapsefi.com')
-    # req.add_header('X-SP-GATEWAY', 'client_id_asdfeavea561va9685e1gre5ara|client_secret_4651av5sa1edgvawegv1a6we1v5a6s51gv')
-    # req.add_header('X-SP-USER-IP', '127.0.0.1')
-    # req.add_header('X-SP-USER', '| ge85a41v8e16v1a618gea164g65')
-    # req.add_header('Content-Type', 'application/json')
-    #
-    # print(req.headers)
-    #
-    # response = urllib.request.urlopen(req, json.dumps(data))
-    #
-    # print(response)
-    #
-    # return render(reqest, 'tabs/create_user_synapse.html', response)
-
-    # url = 'http://uat-api.synapsefi.com'
-    # headers = {
-    #     'X-SP-GATEWAY' : 'client_id_asdfeavea561va9685e1gre5ara|client_secret_4651av5sa1edgvawegv1a6we1v5a6s51gv',
-    #     'X-SP-USER-IP' : '127.0.0.1',
-    #     'X-SP-USER' : '| ge85a41v8e16v1a618gea164g65',
-    #     'Content-Type' : 'application/json',
-    # }
-    # payload = {
-    #     "logins":[
-    #         {
-    #             "email":"test@test.com",
-    #         }
-    #     ],
-    #     "phone_numbers":[
-    #         "123.456.7890",
-    #         "test@test.com",
-    #     ],
-    #     "legal_names":[
-    #         "Test name",
-    #     ],
-    #     "extras":{
-    #         "supp_id":"asdfe515641e56wg",
-    #         "cip_tag":12,
-    #         "is_business":False,
-    #     }
-    # }
-    # print(url)
-    # print(headers)
-    # print(payload)
-    # call = requests.post(url, json=payload, headers=headers)
-    # # response = json.loads(call.text)
-    # # call = call.json()
-    # print (call)
-    # print(call.content)
-    # return render(request, 'tabs/create_user_synapse.html', call)
-    # # return json.loads(call.text)
 
 # group transfer is where the majority of the balancing is going to be taking place.
 # This is where each group members balances are going to be tracked and recorded.
@@ -1365,39 +1296,3 @@ def createUserSynapse(request):
 #                 'group':group,
 #             }
 #             return render(request, 'tabs/group_balance.html', parameters)
-
-
-# this is how the user will be able to transfer money between the users paypal
-# account and the users opentab account.
-# def userTransfer(request):
-#     if 'username' not in request.session:
-#         return redirect('login')
-#     else:
-#         username = request.session['username']
-#         currentUser = User.objects.get(username = username)
-#         # the following is where the money transfer form is going to be processed
-#         # and saved for the user so that the current balance can be calculated
-#         if request.method == 'POST':
-#             form = IndividualFundingForm(request.POST)
-#             if form.is_valid():
-#                 cd = form.cleaned_data
-#                 amount = cd['amount']
-#                 memo = cd['memo']
-#                 transfer = cd['transfer']
-#                 # the is the new userBalance object that is going to be saved
-#                 new_balance = UserBalance.objects.create(
-#                     user = currentUser,
-#                     amount = amount,
-#                     memo = memo,
-#                     transfer = transfer,
-#                 )
-#                 return redirect('home_page')
-#         else:
-#             form = IndividualFundingForm()
-#             message = 'please fill out the form below'
-#             parameters = {
-#                 'form':form,
-#                 'currentUser':currentUser,
-#                 'message':message,
-#             }
-#             return render(request, 'tabs/user_balance.html', parameters)
