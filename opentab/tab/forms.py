@@ -102,7 +102,12 @@ class TransferForm(forms.ModelForm):
         model = Transfers
         fields = ['main', 'transfer', 'amount', 'memo']
 
-class LinkAccountForm(forms.ModelForm):
-    class Meta:
-        model = Accounts
-        fields = ['bank', 'name']
+class LinkAccountForm(forms.Form):
+    bank_choices = (('Wells Fargo', 'Wells Fargo'),
+                    ('Bank Of America', 'Bank Of America'),
+                    ('Chase', 'Chase'))
+    bank = forms.TypedChoiceField(
+        choices = bank_choices
+    )
+    username = forms.CharField(max_length=22)
+    password = forms.CharField(max_length=22)
