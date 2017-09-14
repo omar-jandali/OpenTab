@@ -1015,80 +1015,6 @@ def SplitEven(record, amount):
     rounded_amount = round(split_amount, 2)
     return rounded_amount
 
-# the following def is going to be used in order to create a new user within the
-# synapse api which is what is going to allow the user to link bank accounts
-# and transfer money between different users.
-def createUserSynapse(request):
-    currentUser = loggedInUser(request)
-    userProfile = Profile.objects.get(user = currentUser)
-    # the following 5 lines will be used to grab information that is required
-    # to be send with the synapse api call to create a user
-    email = currentUser.email
-    phone = userProfile.phone
-    legal_name = userProfile.first_name + ' ' + userProfile.last_name
-    supp_id = generateReferenceNumber()
-    cip = currentUser.id
-
-    # this is all of the required arguments that are needed in order to create
-    # a new user within the synapse api and later on linked with bank accounts
-    argss = {
-        'email': str(email),
-        'phone_number': str(phone),
-        'legal_name': str(legal_name),
-        'note': ':)',  # optional
-        'supp_id': str(supp_id),  # optional
-        'is_business': False,
-        'cip_tag': cip
-    }
-
-    # the next line is what actually sends the request and returns a json response
-    # object that can be parsed. THis gives the option of saving important
-    # information from the response that will be stored in the database
-    user = SynapseUser.create(clients, **argss)
-    print(user.json)
-    # this makes sure the response is set in json before it is parsed and data
-    # from teh response is stored
-    response = user.json
-    # the if statements makes sure there is a json response that was returned
-    if response:
-        # the new synapse id of the person that was created is stored for later search
-        _id = response['_id']
-        # the id is then also saved inthe users profile within the database to
-        # make sure that it is saved within the local database.
-        profile = userProfile
-        profile.synapse_id = _id
-        profile.save()
-
-def searchUserSynapse(request):
-    currentUser = loggedInUser(request)
-    currentProfile = Profile.objects.get(user = currentUser)
-    synapse_id = currentProfile.synapse_id
-
-    user = SynapseUser.by_id(clients, str(synapse_id))
-
-    response = user.json
-    print(response)
-    return response
-
-# def linkBankLogin(request, form):
-#     currentUser = loggedInUser(request)
-#     cd = form.cleaned_data
-#     bank_name = cd['bank']
-#     username = cd['username']
-#     password = cd['password']
-#
-#     required = {
-#         'bank_name':'wellsfargo',
-#         'username':'omarjandali',
-#         'password':'123123asd'
-#     }
-#
-#     response = searchUserSynapse(request)
-#
-#     ach_us = AchUsNode.create_via_bank_login(response, **required)
-#
-#     ach_us.mfa_verified
-
 def loggedInUser(request):
     if 'username' not in request.session:
         return redirect('login_page')
@@ -1097,147 +1023,76 @@ def loggedInUser(request):
         currentUser = User.objects.get(username = username)
         return currentUser
 
-# group transfer is where the majority of the balancing is going to be taking place.
-# This is where each group members balances are going to be tracked and recorded.
-# This is also where the updating of each members total baolance within the group
-# will be calculated and recorded.
-# def groupTransfer(request, groupId):
-#     if 'username' not in request.session:
-#         return redirect('login')
-#     else:
-#         # there are a lot of query set that are required to run this method because
-#         # of the complexity.
-#         # The first two are going to grab the user that is looged in
-#         username = request.session['username']
-#         currentUser = User.objects.get(username = username)
-#         # the following is the group that is currently selected and used to display
-#         # relative informaiton
-#         group = Group.objects.get(id = groupId)
-#         # the following will grab all of the members that are a part of the current
-#         # group so that the correct info can be updated and stored
-#         members = Member.objects.filter(group = group).all()
-#         # balances will grab all of the userBalances for the currently logged in user
-#         # this is what will allow the users balance to keep up to date.
-#         # This will be updated every time that the user transfers money between the
-#         # main account and the group account.
-#         balances = UserBalance.objects.filter(user = currentUser).all()
-#         # Like the userTransfer, the following lines will determine what the most up
-#         # to date balance is for the current member and take that calculated amount
-#         # so that it can be updated and saved into the members funding column.
-#         total_user_balance = 0
-#         for balance in balances:
-#             # this means that the user is sending money from the group account to
-#             # individual account
-#             # money will be subtracked from the major account
-#             if balance.transfer == 1:
-#                 total_user_balance = total_user_balance - balance.amount
-#             # this means that the user is sending money from the individual account to
-#             # group account
-#             # money will be added from the major account
-#             if balance.transfer == 2:
-#                 total_user_balance = total_user_balance + balance.amount
-#         for member in members:
-#             if member.user == currentUser:
-#                 total_group_balance = member.funding
-#         # balances = UserBalance.objects.get(user = currentUser)
-#         if request.method == 'POST':
-#             # this is where the group transfer form will be processed and filled out
-#             form = GroupFundingForm(request.POST)
-#             if form.is_valid():
-#                 cd = form.cleaned_data
-#                 amount = cd['amount']
-#                 memo = cd['memo']
-#                 transfer = cd['transfer']
-#                 print(total_user_balance)
-#                 print(total_group_balance)
-#                 print(amount)
-#                 # the following is validation to make sure that there is enough
-#                 # funding in the main account to transfer into the group account
-#                 # when sending money from the individual account to group acccout
-#                 if transfer == 2:
-#                     if total_user_balance < amount:
-#                         form = GroupFundingForm()
-#                         message = 'not enough funds in account'
-#                         parameters = {
-#                             'form':form,
-#                             'currentUser':currentUser,
-#                             'message':message,
-#                             'group':group,
-#                         }
-#                         return render(request, 'tabs/group_balance.html', parameters)
-#                 # the following is validation to make sure that there is enough
-#                 # funding in the group account to transfer into the individual account
-#                 # when sending money from the group account to individual acccout
-#                 if transfer == 1:
-#                     if total_group_balance < amount:
-#                         form = GroupFundingForm()
-#                         message = 'not enough funds in account'
-#                         parameters = {
-#                             'form':form,
-#                             'currentUser':currentUser,
-#                             'message':message,
-#                             'group':group,
-#                         }
-#                         return render(request, 'tabs/group_balance.html', parameters)
-#                 # this is where a new balance will be recorded to take into account
-#                 # this new balance object when calculate the total balance for the
-#                 # current user that is logged in
-#                 new_group_balance = GroupBalance.objects.create(
-#                     user = currentUser,
-#                     group = group,
-#                     amount = amount,
-#                     memo = memo,
-#                     transfer = transfer,
-#                 )
-#                 # every member in a group has a total balance that they have within
-#                 # the group to see how much each person has to contributed
-#                 # This will be updated and saved with every group transaction and
-#                 # money transfer that occurs
-#                 for member in members:
-#                     if member.user == currentUser:
-#                         funding = member.funding
-#                         update_member = member
-#                         if transfer == 1:
-#                             update_member.funding = funding - amount
-#                         if transfer == 2:
-#                             update_member.funding = funding + amount
-#                         update_member.save()
-#                 # this was a slightly trick part. WHen you transfer money
-#                 # from group account to individual account or other way arround
-#                 # and a new balance is created and added to your balance statement,
-#                 # it has to be inverted becasue if you can money out of one account
-#                 # and pout it in the other account one looses money and the other
-#                 # once gains money. THis is was the way for me to do that...
+# # the following def is going to be used in order to create a new user within the
+# # synapse api which is what is going to allow the user to link bank accounts
+# # and transfer money between different users.
+# def createUserSynapse(request):
+#     currentUser = loggedInUser(request)
+#     userProfile = Profile.objects.get(user = currentUser)
+#     # the following 5 lines will be used to grab information that is required
+#     # to be send with the synapse api call to create a user
+#     email = currentUser.email
+#     phone = userProfile.phone
+#     legal_name = userProfile.first_name + ' ' + userProfile.last_name
+#     supp_id = generateReferenceNumber()
+#     cip = currentUser.id
 #
-#                 # the following will make sure that when money is taken out of the
-#                 # group account, the value is added to the individual account rahter
-#                 # than subtracked
-#                 if transfer == 1:
-#                     new_user_balance = UserBalance.objects.create(
-#                         user = currentUser,
-#                         amount = amount,
-#                         memo = memo,
-#                         transfer = 2
-#                     )
-#                 # the following will make sure that when money is taken out of the
-#                 # individual account, the value is added to the group account rahter
-#                 # than subtracked
-#                 if transfer == 2:
-#                     new_user_balance = UserBalance.objects.create(
-#                         user = currentUser,
-#                         amount = amount,
-#                         memo = memo,
-#                         transfer = 1
-#                     )
-#                 return redirect('group_home', groupId=group.id)
-#         else:
-#             # this is what will display the original html file and the parameters
-#             form = GroupFundingForm()
-#             message = 'Fill out the form'
-#             parameters = {
-#                 'form':form,
-#                 'currentUser':currentUser,
-#                 'message':message,
-#                 'group':group,
-#             }
-#             return render(request, 'tabs/group_balance.html', parameters)
+#     # this is all of the required arguments that are needed in order to create
+#     # a new user within the synapse api and later on linked with bank accounts
+#     argss = {
+#         'email': str(email),
+#         'phone_number': str(phone),
+#         'legal_name': str(legal_name),
+#         'note': ':)',  # optional
+#         'supp_id': str(supp_id),  # optional
+#         'is_business': False,
+#         'cip_tag': cip
+#     }
+#
+#     # the next line is what actually sends the request and returns a json response
+#     # object that can be parsed. THis gives the option of saving important
+#     # information from the response that will be stored in the database
+#     user = SynapseUser.create(clients, **argss)
+#     print(user.json)
+#     # this makes sure the response is set in json before it is parsed and data
+#     # from teh response is stored
+#     response = user.json
+#     # the if statements makes sure there is a json response that was returned
+#     if response:
+#         # the new synapse id of the person that was created is stored for later search
+#         _id = response['_id']
+#         # the id is then also saved inthe users profile within the database to
+#         # make sure that it is saved within the local database.
+#         profile = userProfile
+#         profile.synapse_id = _id
+#         profile.save()
+#
+# def searchUserSynapse(request):
+#     currentUser = loggedInUser(request)
+#     currentProfile = Profile.objects.get(user = currentUser)
+#     synapse_id = currentProfile.synapse_id
+#
+#     user = SynapseUser.by_id(clients, str(synapse_id))
+#
+#     response = user.json
+#     print(response)
+#     return response
+#
+# # def linkBankLogin(request, form):
+# #     currentUser = loggedInUser(request)
+# #     cd = form.cleaned_data
+# #     bank_name = cd['bank']
+# #     username = cd['username']
+# #     password = cd['password']
+# #
+# #     required = {
+# #         'bank_name':'wellsfargo',
+# #         'username':'omarjandali',
+# #         'password':'123123asd'
+# #     }
+# #
+# #     response = searchUserSynapse(request)
+# #
+# #     ach_us = AchUsNode.create_via_bank_login(response, **required)
+# #
+# #     ach_us.mfa_verified
