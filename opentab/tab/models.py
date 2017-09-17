@@ -2,6 +2,10 @@ from __future__ import unicode_literals
 from django.db import models
 from django.contrib.auth.models import User
 
+# the following is what gives the states to select from when it comes to the states
+# field in the model
+from django_localflavor_us.models import USStateField
+
 FRIEND_CATEGORY_CHOICES = (
     ('1', 'default'),
     ('2', 'friend'),
@@ -127,13 +131,19 @@ class Profile(models.Model):
     first_name = models.CharField(max_length=25, default='first')
     last_name = models.CharField(max_length=25, default='last')
     dob = models.DateField(default='1950-01-01')
-    city = models.CharField(max_length=45, default='city')  # user
-    state = models.CharField(max_length=25, default='state')
+    street = models.CharField(max_length=200, default='street address')
+    city = models.CharField(max_length=100, default='city')
+    state = USStateField(default='CA')
+    zip_code = models.IntegerField(default=12345)
     phone = models.BigIntegerField(default=0)  # user
     privacy = models.SmallIntegerField(default=1)  # user
     balance = models.DecimalField(decimal_places=2, max_digits=9, default=0)
     synapse_id = models.CharField(max_length=220, default=000000)
     created = models.DateTimeField(auto_now_add=True)  # server
+
+# the following need to be sent with the paypal api to create a new user within
+# the applicaiton. account-type, address, citizenship-code, governament-id, account-web-option,
+# currency-code, dob, email, name, language-code, reg-type, request-envelope
 
 class Transfers(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -150,3 +160,7 @@ class Accounts(models.Model):
     bank = models.CharField(max_length=50, default='Wells Fargo')
     name = models.CharField(max_length=50, default='Account')
     created = models.DateTimeField(auto_now_add=True)
+
+#----- The following is a potential model class for the new profile settings ---
+# the following are a list of all the different objects that are needed for the
+# paypal api. []

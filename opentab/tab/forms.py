@@ -29,7 +29,8 @@ class ProfileForm(forms.ModelForm):
     dob = forms.DateField(widget=forms.widgets.DateInput(attrs={'type':'date'}))
     class Meta:
         model = Profile
-        fields = ['first_name', 'last_name', 'dob', 'city', 'state', 'phone', 'privacy']
+        fields = ['first_name', 'last_name', 'dob', 'street', 'city', 'state', 
+                    'zip_code', 'phone', 'privacy']
 
 class CreateGroupForm(forms.ModelForm):
     class Meta:

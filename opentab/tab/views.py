@@ -24,21 +24,41 @@ import json
 import requests
 
 import os
-from synapse_pay_rest import Client
-from synapse_pay_rest import User as SynapseUser
-from synapse_pay_rest.models.nodes import AchUsNode
 
-args = {
-    'client_id': 'client_id_SOJMCFkagKAtvTpem0ZWPRbwznQ2yc5h0dN6YiBl',
-    'client_secret': 'client_secret_muUbizcGBq2oXKQTMEphg0S4tOyH5xLYNsPkC3IF',
-    'fingerprint': '599378e9a63ec2002d7dd48b',
-    'ip_address': '127.0.0.1',
-    'development_mode':True,
-    'logging':False
-}
+import dwollav2
 
-clients = Client(**args)
-print(clients)
+#-------------------------------------------------------------------------------
+# the following code is going to be for the Dwolla API configuration
+
+#the following is going to be the access token for the dwolla sandbox
+token = 'ZIguu9oOb4aeq2qS0YUGt1T8WOnt73GSki3EHIyJ1jPE1EspdX'
+
+app_key = 'o8TsxKanLqGxoTKDas9dY8RCXpQ3hEeWussEEmhyLbdmED3s62'
+app_secret = 'haUMr5aKf9zpMQDUMugcaLFOUg47oHYBRew64p65O2nGkLa11F'
+
+client = dwollav2.Client(
+    key = app_key,
+    secret = app_secret,
+    environment = "sandbox"
+)
+
+# the following is going to be what authenticates the account holder.
+app_token = client.Auth.client()
+
+# the following are all of the different imports for the synapse api integration
+# from synapse_pay_rest import Client
+# from synapse_pay_rest import User as SynapseUser
+# from synapse_pay_rest.models.nodes import AchUsNode
+# args = {
+#     'client_id': 'client_id_SOJMCFkagKAtvTpem0ZWPRbwznQ2yc5h0dN6YiBl',
+#     'client_secret': 'client_secret_muUbizcGBq2oXKQTMEphg0S4tOyH5xLYNsPkC3IF',
+#     'fingerprint': '599378e9a63ec2002d7dd48b',
+#     'ip_address': '127.0.0.1',
+#     'development_mode':True,
+#     'logging':False
+# }
+# clients = Client(**args)
+# print(clients)
 
 # The signup method is where all of the processing and display of the users signup
 # screen. The form asks for username, password, verify the password, and the email
@@ -833,7 +853,7 @@ def addTransaction(request, groupId, recordId):
                             category = 1,
                         )
                 # this will take the recently added transaction and add the users
-                # amount due after even split and subtract it from the users
+                # amount due after even split and subtract it from the user4s
                 # group account balance.
                 # for member in members:
                 #     funding = member.funding
@@ -1022,6 +1042,8 @@ def loggedInUser(request):
         username = request.session['username']
         currentUser = User.objects.get(username = username)
         return currentUser
+
+
 
 # # the following def is going to be used in order to create a new user within the
 # # synapse api which is what is going to allow the user to link bank accounts
