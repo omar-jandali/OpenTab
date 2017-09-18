@@ -27,10 +27,11 @@ class ProfileForm(forms.ModelForm):
         choices=split_choices, widget=forms.RadioSelect, coerce=int
     )
     dob = forms.DateField(widget=forms.widgets.DateInput(attrs={'type':'date'}))
+    ssn = forms.IntegerField(label='Last 4 of SSN')
     class Meta:
         model = Profile
-        fields = ['first_name', 'last_name', 'dob', 'street', 'city', 'state', 
-                    'zip_code', 'phone', 'privacy']
+        fields = ['first_name', 'last_name', 'dob', 'street', 'city', 'state',
+                    'zip_code', 'phone', 'ssn', 'privacy']
 
 class CreateGroupForm(forms.ModelForm):
     class Meta:

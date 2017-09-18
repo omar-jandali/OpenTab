@@ -136,9 +136,10 @@ class Profile(models.Model):
     state = USStateField(default='CA')
     zip_code = models.IntegerField(default=12345)
     phone = models.BigIntegerField(default=0)  # user
+    # synapse_id = models.CharField(max_length=220, default=000000)
     privacy = models.SmallIntegerField(default=1)  # user
     balance = models.DecimalField(decimal_places=2, max_digits=9, default=0)
-    synapse_id = models.CharField(max_length=220, default=000000)
+    dwolla_id = models.CharField(max_length=200, default='https://api-sandbox.dwolla.com')
     created = models.DateTimeField(auto_now_add=True)  # server
 
 # the following need to be sent with the paypal api to create a new user within

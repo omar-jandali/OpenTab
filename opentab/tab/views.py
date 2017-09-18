@@ -133,6 +133,7 @@ def profileSetup(request):
                 state = cd['state']
                 phone = cd['phone']
                 privacy = cd['privacy']
+                ssn = cd['ssn']
                 # this is the new record that is going to be created and saved
                 new_profile = Profile.objects.create(
                     user = currentUser,
@@ -144,8 +145,8 @@ def profileSetup(request):
                     phone = phone,
                     privacy = privacy,
                 )
-                createUserSynapse(request)
-                searchUserSynapse(request)
+                createUserDwolla(request, ssn)
+                searchuserDwolla(request)
                 return redirect('home_page')
         else:
             # this is what is going to be saved into the html file and used to
@@ -218,6 +219,8 @@ def logoutPage(request):
 #   name = the name of the user that is logged in
 def userHome(request):
     currentUser = loggedInUser(request)
+    # the following will simple check to see the users dwolla account info for testing
+    # customer = searchUserDwolla(request)
     # this is used to grab all of the groups that the user is a part of
     members = Member.objects.filter(user=currentUser).all()
     # the following are what will be used ot get all of the user requests
@@ -1035,6 +1038,60 @@ def SplitEven(record, amount):
     rounded_amount = round(split_amount, 2)
     return rounded_amount
 
+# the following method is going to be used to create a new user account within the
+# Dwolla api system (sandbox/testing)
+def createUserDwolla(request, ssn):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+    # the following is going to create the object that will store the new users
+    # infromaiton and pass it with the request to the Deolla api in order to create
+    # a new user within the api
+    request_body = {
+        'firstName':currentProfile.first_name,
+        'lastName':currentProfile.last_name,
+        'email':currentUser.email,
+        'type':'personal',
+        'address1':currentProfile.street,
+        'city':currentProfile.city,
+        'state':currentProfile.state,
+        'postalCode':currentProfile.zip_code,
+        'dateOfBirth':str(currentProfile.dob),
+        'ssn':ssn,
+    }
+    print(request_body)
+    # the following lines will send the request to Dwolla and create a user within
+    # the api. It will then return an object that can be displayed and grabed for
+    # parsing of the information
+    customer = app_token.post('customers', request_body)
+    print(customer)
+    # the following will grab the users location (url with id) and stores it in the
+    # database for early retreival later on in the process
+    customer.headers['location']
+    customerLocation = customer.headers['location']
+    print(customerLocation)
+    _id = customer.body.id
+    print(_id)
+
+    # the following is going to take the new dwolla customer and grab the url locaiton
+    # for the user. THe users locaiton is then stored in the local database for easy
+    # retreival later in the application
+    updateUser = currentProfile
+    updateUser.dwolla_id = customerLocation
+    updateUser.save()
+
+# the following method is going to give yap the ability to retreive the users
+# informaiton related to the dwolla api for dwolla actions
+def searchUserDwolla(request):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+    # the next two lines will grab the users dwolla app id so that the customer can
+    # be retreived for useage
+    customer_id = currentProfile.dwolla_id
+    customer = app_token.get(customer_id)
+    # the following will print informaiton that iwas stored in the api to make
+    # sure that the right information is retreived.
+    return customer
+
 def loggedInUser(request):
     if 'username' not in request.session:
         return redirect('login_page')
@@ -1042,8 +1099,6 @@ def loggedInUser(request):
         username = request.session['username']
         currentUser = User.objects.get(username = username)
         return currentUser
-
-
 
 # # the following def is going to be used in order to create a new user within the
 # # synapse api which is what is going to allow the user to link bank accounts
