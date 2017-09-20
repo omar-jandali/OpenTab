@@ -6,6 +6,7 @@
   <h3><a href="{% url 'accounts' %}">accounts</a></h3>
   <h3><a href="{% url 'transfer' %}">transfer money</a></h3>
   <h3><a href="{% url 'link_account' %}">Link Account</a></h3>
+  <h3><a href="{% url 'linked_accounts' %}">Linked Account</a></h3>
   <form action="" method="POST">
     {% csrf_token %}
     <input type="text" name="searched">
@@ -86,6 +87,5 @@
       </a>
     </li>
   </ul>
-
   <a href="{% url 'logout' %}">Logout</a>
 {% endblock %}

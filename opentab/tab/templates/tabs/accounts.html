@@ -15,7 +15,7 @@
   {% for profile in profiles %}
     <p>{{ profile.user.username }}, {{ profile.first_name }}, {{ profile.last_name }},
       {{ profile.dob }}, {{ profile.city }}, {{ profile.state }}, {{ profile.phone }},
-      {{ profile.balance }}, {{ profile.privacy }}</p>
+      {{ profile.balance }}, {{ profile.dwolla_id }}, {{ profile.privacy }}</p>
   {% endfor %}
   <h3>Transfers</h3>
   {% for transfer in transfers %}
@@ -52,8 +52,14 @@
   {% endfor %}
   <h3>transactions</h3>
   {% for transaction in transactions %}
-  <p>ID:{{ transaction.id }}, USER:{{ transaction.user.username }},
-    AMOUNT:{{ transaction.amount }}, DESCRIPTION:{{ transaction.description }},GROUP:{{ transaction.group.id }},
-    RECORD:{{ transaction.record.id }}, CREATED:{{ transaction.created }}</p>
+    <p>ID:{{ transaction.id }}, USER:{{ transaction.user.username }},
+      AMOUNT:{{ transaction.amount }}, DESCRIPTION:{{ transaction.description }},GROUP:{{ transaction.group.id }},
+      RECORD:{{ transaction.record.id }}, CREATED:{{ transaction.created }}</p>
   {% endfor %}
+  <h3>Dwolla Accounts</h3>
+  {% if dwollas %}
+    {% for dwolla in dwollas %}
+      <p>{{dwolla.user}}, {{dwolla.source_name}}, {{dwolla.source_id}}</p>
+    {% endfor %}
+  {% endif %}
 {% endblock %}

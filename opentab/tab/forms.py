@@ -105,11 +105,13 @@ class TransferForm(forms.ModelForm):
         fields = ['main', 'transfer', 'amount', 'memo']
 
 class LinkAccountForm(forms.Form):
-    bank_choices = (('Wells Fargo', 'Wells Fargo'),
-                    ('Bank Of America', 'Bank Of America'),
-                    ('Chase', 'Chase'))
-    bank = forms.TypedChoiceField(
-        choices = bank_choices
+    account_choices = (('checking', 'Checking'),
+                       ('savings', 'Savings'))
+    account = forms.TypedChoiceField(
+        choices = account_choices
     )
-    username = forms.CharField(max_length=22)
-    password = forms.CharField(max_length=22)
+    accountName = forms.CharField(
+        max_length=100, label="Account Name"
+    )
+    routingNumber = forms.CharField(max_length=22, label="Routing Number")
+    accountNumber = forms.CharField(max_length=22, label="Account Number")

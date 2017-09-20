@@ -13,7 +13,7 @@ from random import randint
 from decimal import Decimal
 
 from .models import Group, User, Member, Record, Transaction, Request, Friend, Profile
-from .models import UserBalance, GroupBalance, Activity, Accounts, Transfers
+from .models import UserBalance, GroupBalance, Activity, Accounts, Transfers, Dwolla
 
 from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
 from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
@@ -146,7 +146,7 @@ def profileSetup(request):
                     privacy = privacy,
                 )
                 createUserDwolla(request, ssn)
-                searchuserDwolla(request)
+                searchUserDwolla(request)
                 return redirect('home_page')
         else:
             # this is what is going to be saved into the html file and used to
@@ -219,8 +219,8 @@ def logoutPage(request):
 #   name = the name of the user that is logged in
 def userHome(request):
     currentUser = loggedInUser(request)
-    # the following will simple check to see the users dwolla account info for testing
-    # customer = searchUserDwolla(request)
+    # searchUserDwolla(request)
+    # searchFundingSourcesDwolla(request)
     # this is used to grab all of the groups that the user is a part of
     members = Member.objects.filter(user=currentUser).all()
     # the following are what will be used ot get all of the user requests
@@ -457,10 +457,18 @@ def linkAccount(request):
     # the following is a very simple and basic for processing section.
     if request.method == 'POST':
         form = LinkAccountForm(request.POST)
+        # the following line is ogoing to check and make user that the form which
+        # was submitted is valid before it the form is set to the processing method
+        # at the bottom of the file.
         if form.is_valid():
-            linkBankLogin(request, form)
+            # the form and its content is sent to the Link Account method which will
+            # take the informaiton that was submitted and process it through the Dwolla
+            # api which will link a bank account to the users account
+            linkAccountDwolla(request, form)
             return redirect('home_page')
     else:
+        # the following will send the form to the html file where it will be filled
+        # out and submitted for processing.
         form = LinkAccountForm()
         message = 'please fill out the entire form'
         parameters = {
@@ -469,6 +477,66 @@ def linkAccount(request):
             'message':message,
         }
         return render(request, 'tabs/link_account.html', parameters)
+
+# THe following will use the Dwolla api to retrieve all of hte different bank accounts
+# that are connected and linked for the user that is logged in. This is accessable
+# through the linked accounts file in the users home page
+def linkedAccounts(request):
+    # the following grabs the logged in user
+    currentUser = loggedInUser(request)
+    # the following will send the user through the account retreival method which
+    # accesses the Dwolla table stored in the database which keeps the unique id
+    # of every account that islinked
+    accounts = searchFundingSourcesDwolla(request, currentUser)
+    print(accounts)
+    # the following will check to see if there are in fact linked accounts connected
+    # to the user. If there is no account, the user will be redirected to the page
+    # where the user will be able to link a new account
+    if accounts == None:
+        message = 'There are no linked accounts - linkedAccounts'
+        print(message)
+        return redirect('link_account')
+    # if there are accounts, they will be stored and passed to the html file where
+    # the user will be able to view all accounts and set the default.
+    for account in accounts:
+        print(type(account.source_id))
+    parameters = {
+        'currentUser':currentUser,
+        'accounts':accounts,
+    }
+    return render(request, 'tabs/linked_accounts.html', parameters)
+
+# the following method is going to be used to enable the user to set a default
+# account that will be automatically used during transacitons for quick and easy
+# processing. It can also be changed here as well
+def setDefaultSource(request, source_id):
+    currentUser = loggedInUser(request)
+    # the following will grab all of the accounts linked to the user
+    sources = Dwolla.objects.filter(user = currentUser).all()
+    # the following wil grab the account that the user has selected to become the
+    # defauly account
+    currentSource = Dwolla.objects.get(id = source_id)
+
+    # the for statment will gp through every account coonected to the user for processing
+    for source in sources:
+        # the following if statement will check to see if there is apreviously set
+        # default account
+        if source.status == 2:
+            # if there is a defauly account which is not the one selected, then the
+            # newly selected account will become the new default account and the only
+            # default will become a non-default account
+            if source.id != currentSource.id:
+                # the follownig 3 lines will set the new defauly acocunt by updating
+                # the record.
+                updated_source = currentSource
+                updated_source.status = 2
+                updated_source.save()
+                # the following will take the old default and make it a normal account
+                un_default_source = source
+                un_default_source.status = 1
+                un_default_source.save()
+                return redirect('linked_accounts')
+    return redirect('home_page')
 
 # the following method managed the sending of friend requests to other users and
 # storing a record of that in the database.
@@ -485,7 +553,7 @@ def sendRequest(request, requested):
     # the following will add a record to the activity to notify bother users
     # of the Activity
     sendingDescription = 'Friend request to ' + requested + ' has been sent'
-    receivingDescription = username + ' has sent you a friend request'
+    receivingDescription = currentUser.username + ' has sent you a friend request'
     # the first of the two objects that is goint to be stored is what the sender
     # is going to see.
     sender_activity = Activity.objects.create(
@@ -518,7 +586,7 @@ def acceptRequest(request, accepted):
     )
     # the following two objects are going to be what stores the acceptance of
     # friend request in teh activty table for both sides
-    accepterDescription = username + ' has accepted your friend request'
+    accepterDescription = currentUser.username + ' has accepted your friend request'
     acceptedDescription = 'You and ' + accepted + ' are now friends'
     accepted_activity = Activity.objects.create(
         user = currentUser,
@@ -567,7 +635,7 @@ def createGroup(request):
                 name = name,
                 description = description,
                 reference_code = referenceCode,
-                created_by = user,
+                created_by = currentUser,
             )
             #---------------------------------------------------------
             # create a column that addes the person who created the group
@@ -600,13 +668,7 @@ def addMembers(request, groupId):
     groups = Group.objects.filter(id = groupId).all()
     # the following will grab all of the member objects that are related to the logged
     # in user.
-    members = Member.objects.filter(user = currentUser).all()
-    for member in members:
-        for group in groups:
-            if group.id == member.group.id:
-                # if the groups id is the same as the group id that is stored in the
-                # members object, the currently cycled through group is stored as group
-                group = Group.objects.get(id = group.id)
+    group = Group.objects.get(id = groupId)
     users = User.objects.all()
     friends = Friend.objects.all()
     # the form is similar to the form submition above for reference
@@ -616,7 +678,7 @@ def addMembers(request, groupId):
         new_default_member = Member.objects.create(
             user = currentUser,
             group = group,
-            status = 1,
+            status = 2,
         )
         description = currentUser.username + 'have been added to ' + group.name
         # the following is going to add a new activity record when the first member of
@@ -804,7 +866,11 @@ def addTransaction(request, groupId, recordId):
     # the following is going to collect all of the members records related
     # to this group so that i can be updated and saved within the members
     # tabs based on the amount of the expense that is due for each memver
-    members = Member.objects.filter(group = group).all()
+    members = Member.objects.filter(group = group).filter(status=1).all()
+    # the following line will grab the host from the members of the group that is
+    # designated to make ithe group and record the transaction. this is done because
+    # it will be easier to manage thw two differently later on
+    host = Member.objects.filter(group = group).filter(status = 2).first()
     # the following will create a formset that will create a form for rach of the
     # members that are directly related to the transaction. the number of forms
     # comes from the result of the transCount queryset
@@ -832,19 +898,32 @@ def addTransaction(request, groupId, recordId):
                         # in teh following lines all of the existing trnasaciton
                         # record will be updated to include the correct amount due
                         # as well as the description that was submitted for the
-                        # specific transaction.
+                        # specific transaction
                         trans.description = description
                         trans.amount = split_amount
                         trans.save()
+
                         # the follwoing is going to be where the people involved
                         # in the transaction are going to have thier member amounts
                         # updated based on the expense.
+                        # the following does not have anything to do with the actual
+                        # transaction process, it just keeps records up to date
+                        count = 0
                         for member in members:
                             if trans.user == member.user:
                                 funding = member.funding
                                 update_member = member
                                 update_member.funding = funding - split_amount
                                 update_member.save()
+                                count = count + 1
+                        # the following is going to update the host expense records
+                        # to include the maount money that is supposed to be sent to
+                        # the host
+                        received = split_amount * count
+                        fuding = host.funding
+                        update_host = host
+                        update_host.funding = funding + received
+                        update_host.save()
                         # the following is going to be where a new actiivty is
                         # created that adds a record of the new expenses
                         activityDescription = trans.user.username + '\'s amount due is ' + str(split_amount) + ' for ' + description
@@ -855,6 +934,8 @@ def addTransaction(request, groupId, recordId):
                             status = 1,
                             category = 1,
                         )
+
+                        createTransactionDwolla()
                 # this will take the recently added transaction and add the users
                 # amount due after even split and subtract it from the user4s
                 # group account balance.
@@ -985,6 +1066,7 @@ def accounts(request):
     activities = Activity.objects.all()
     accounts = Accounts.objects.all()
     transfers = Transfers.objects.all()
+    dwollas = Dwolla.objects.all()
     if 'username' in request.session:
         currentUser = request.session['username']
     else:
@@ -1002,6 +1084,7 @@ def accounts(request):
         'activities':activities,
         'accounts':accounts,
         'transfers':transfers,
+        'dwollas':dwollas,
     }
     return render(request, 'tabs/accounts.html', params)
     # return render(request, 'tabs/addMembers.html', params)
@@ -1055,7 +1138,7 @@ def createUserDwolla(request, ssn):
         'city':currentProfile.city,
         'state':currentProfile.state,
         'postalCode':currentProfile.zip_code,
-        'dateOfBirth':str(currentProfile.dob),
+        'dateOfBirth':'1970-01-01',
         'ssn':ssn,
     }
     print(request_body)
@@ -1069,8 +1152,6 @@ def createUserDwolla(request, ssn):
     customer.headers['location']
     customerLocation = customer.headers['location']
     print(customerLocation)
-    _id = customer.body.id
-    print(_id)
 
     # the following is going to take the new dwolla customer and grab the url locaiton
     # for the user. THe users locaiton is then stored in the local database for easy
@@ -1083,14 +1164,78 @@ def createUserDwolla(request, ssn):
 # informaiton related to the dwolla api for dwolla actions
 def searchUserDwolla(request):
     currentUser = loggedInUser(request)
+    username = currentUser.username
+    print(username)
     currentProfile = Profile.objects.get(user = currentUser)
     # the next two lines will grab the users dwolla app id so that the customer can
     # be retreived for useage
     customer_id = currentProfile.dwolla_id
+    print(customer_id)
     customer = app_token.get(customer_id)
     # the following will print informaiton that iwas stored in the api to make
     # sure that the right information is retreived.
     return customer
+
+def linkAccountDwolla(request, form):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+    # before linking the account through the Dwolla api, the informaiton is collected
+    # from the form that was submitted and stored
+    cd = form.cleaned_data
+    routing_number = cd['routingNumber']
+    account_number = cd['accountNumber']
+    account = cd['account']
+    name = cd['accountName']
+    # the users Dwolla id is pulled in order to link the account to the user
+    customer_id = currentProfile.dwolla_id
+    print(customer_id)
+    # the content required to link and account through the api is stored in an object
+    request_body = {
+        'routingNumber':routing_number,
+        'accountNumber':account_number,
+        'type':account,
+        'name':name,
+    }
+    # the new account is requested and sent to the api.
+    source = app_token.post('%s/funding-sources' % customer_id, request_body)
+    # the accounts id is pulled and stored in a variable before put in a local database
+    sourceLocation = source.headers['location']
+    print(sourceLocation)
+
+    # the following is going to store the funding source link within the database
+    # to make it easier to locate the funding source links later when making
+    # transactions
+    newFundingSource = Dwolla.objects.create(
+        user = currentUser,
+        source_name = name,
+        source_id = sourceLocation
+    )
+
+def searchFundingSourcesDwolla(request, user):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+    # the following will grab the selected user whose funding sources are being searched
+    selected_user = user
+    print(selected_user)
+    # the following is an alternative for searching through the dwolla api in order
+    # to grab all of the links related to the users funding sources
+    sources = Dwolla.objects.filter(user = selected_user).all()
+    print(sources)
+    # the following will check to see if there are any currently linked sources with the user
+    if sources == None:
+        # if there are no sources,  the user will be sent to the link bank account page
+        # to link a bank account
+        message = 'You have no linked accounts'
+        print(message)
+        return redirect('link_account')
+    # if there are sources linked with the user selected, the sources will be scanned and
+    # all of the sources will be retured to the method call
+    for source in sources:
+        name = source.source_name
+        _id = source.source_id
+        print(name)
+        print(_id)
+    return sources
 
 def loggedInUser(request):
     if 'username' not in request.session:

@@ -16,7 +16,6 @@
       {{ member.user.username }} -- {{ member.funding }}
       {% if member.user.username == currentUser.username %}
         {{ total_amount }}
-        <a href="{% url 'group_balance' group.group.id %}"> transfer money (user to group balances)</a>
       {% endif %}
     </p>
   {% endfor %}

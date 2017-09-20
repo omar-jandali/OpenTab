@@ -162,6 +162,12 @@ class Accounts(models.Model):
     name = models.CharField(max_length=50, default='Account')
     created = models.DateTimeField(auto_now_add=True)
 
-#----- The following is a potential model class for the new profile settings ---
-# the following are a list of all the different objects that are needed for the
-# paypal api. []
+# The following model is going to be used to create a record and store all the informaitno
+# related to each users dwolla account for easy access within the dwolla api and the app
+# methods that are going to work with the Dwolla api directly
+
+class Dwolla(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    source_name = models.CharField(max_length=100, default='customer id')
+    source_id = models.CharField(max_length=100, default='funding source')
+    status = models.SmallIntegerField(default=1)
