@@ -8,6 +8,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.forms import formset_factory
 from django.db.models import Q
+import os, requests
 
 from random import randint
 from decimal import Decimal
@@ -20,45 +21,31 @@ from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
 from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm, ProfileForm
 from .forms import IndividualFundingForm, GroupFundingForm, TransferForm, LinkAccountForm
 
-import json
-import requests
-
-import os
-
 import dwollav2
 
 #-------------------------------------------------------------------------------
 # the following code is going to be for the Dwolla API configuration
+#-------------------------------------------------------------------------------
 
 #the following is going to be the access token for the dwolla sandbox
 token = 'ZIguu9oOb4aeq2qS0YUGt1T8WOnt73GSki3EHIyJ1jPE1EspdX'
 
+# the following are the two keys that are provided through the api to connected
+# to the api
 app_key = 'o8TsxKanLqGxoTKDas9dY8RCXpQ3hEeWussEEmhyLbdmED3s62'
 app_secret = 'haUMr5aKf9zpMQDUMugcaLFOUg47oHYBRew64p65O2nGkLa11F'
 
+# initiates the connection between the api and opentab
 client = dwollav2.Client(
     key = app_key,
     secret = app_secret,
     environment = "sandbox"
 )
 
-# the following is going to be what authenticates the account holder.
-app_token = client.Auth.client()
-
-# the following are all of the different imports for the synapse api integration
-# from synapse_pay_rest import Client
-# from synapse_pay_rest import User as SynapseUser
-# from synapse_pay_rest.models.nodes import AchUsNode
-# args = {
-#     'client_id': 'client_id_SOJMCFkagKAtvTpem0ZWPRbwznQ2yc5h0dN6YiBl',
-#     'client_secret': 'client_secret_muUbizcGBq2oXKQTMEphg0S4tOyH5xLYNsPkC3IF',
-#     'fingerprint': '599378e9a63ec2002d7dd48b',
-#     'ip_address': '127.0.0.1',
-#     'development_mode':True,
-#     'logging':False
-# }
-# clients = Client(**args)
-# print(clients)
+#-------------------------------------------------------------------------------
+# the following section is the actual code for the core of the project. Not an
+# api function. this is the self written code that will reate and run the application
+#-------------------------------------------------------------------------------
 
 # The signup method is where all of the processing and display of the users signup
 # screen. The form asks for username, password, verify the password, and the email
@@ -198,21 +185,6 @@ def loginPage(request):
         }
         return render(request, 'tabs/login.html', parameters)
 
-# the following is what will take care of the logout portion of the project
-# this comment is to test and make sure that the new gitlab remote is working
-def logoutPage(request):
-    # the following 3 lines will check to see if there is a username in the session
-    # which means that there is someone logged in and it will give them access to
-    # opentab.
-    if 'username' not in request.session:
-        return redirect('login')
-    else:
-        # the following will dump the stored username in the session and redirect
-        # to the login page.
-        username = request.session['username']
-        request.session.pop('username')
-        return redirect('login')
-
 # The following view is what will be used to display all of the groups and informaiton
 # for the logged in user including groups balances and friends
 # Passed in var:
@@ -336,213 +308,6 @@ def userHome(request):
         }
         return render(request, 'tabs/user_home.html', parameters)
 
-# The following is the view that will manage the groups profile. It will be the main
-# page that users will be able to use to find all of the different information
-# regarding the specific group that is selected.
-# Passed in var:
-# groupId = the id of the group that is selected (will be changed to the group name
-# later into the development)
-def groupHome(request, groupId):
-    currentUser = loggedInUser(request)
-    group = Member.objects.filter(user = currentUser).filter(group = groupId).first()
-    # the following is going to be the currentGroup by groupId
-    currentGroup = Group.objects.get(id = groupId)
-    # the following is the group object with the id that is passed in the url
-    # group = Group.objects.get(name = groupName)
-    members = Member.objects.filter(group = group.group).all()
-    records = Record.objects.filter(group = group.group).all()
-    transactions = Transaction.objects.filter(group = group.group).all()
-    # the following is going to grab all of the balances for the members of the
-    # selected group.
-    balances = GroupBalance.objects.filter(group = group.group).all()
-    # the following is all of the activity related to the specified group
-    activities = Activity.objects.filter(group = currentGroup).all()
-    parameters = {
-        'members':members,
-        'records':records,
-        'group':group,
-        'transactions':transactions,
-        'currentUser':currentUser,
-        'balances':balances,
-        'activities':activities,
-    }
-    return render(request, 'tabs/group_home.html', parameters)
-
-# within the following view method, this will allow the user to create a transfer of money
-# between the user's linked external bank account though Synapse and the synpase sub-account
-# that will hold the money that is usable within the application... It will take that transfer
-# and create a record for each transfer within the activity table and the balance table
-def transfers(request):
-    currentUser = loggedInUser(request)
-    # the following grabs all the profiles that will be used later on in the method.
-    # THe profile is where the users in app balance is stored and updated, We grab all
-    # of the records so that later in the method, we can check and see if they logged in
-    # user has an existing profile, or if there is a new to create a new profile to store
-    # the users balance.
-    profiles = Profile.objects.all()
-    # the following is simple form processing where the information collected from the form
-    # is stored in variables.
-    if request.method == 'POST':
-        form = TransferForm(request.POST)
-        if form.is_valid():
-            cd = form.cleaned_data
-            main = cd['main']
-            transfer = cd['transfer']
-            amount = cd['amount']
-            memo = cd['memo']
-            # the following is a new transfer object that stored the transfer within the database
-            new_transfer = Transfers.objects.create(
-                user = currentUser,
-                main = main,
-                transfer = transfer,
-                amount = amount,
-                memo = memo,
-                frequency = 1,
-                status = 1,
-            )
-            # this is where the profile proccessing is happening...
-            # the forst for statement will go through each profile and see if the current
-            # user has a profile, if there is a profile, then it is stored in a variable for
-            # later use
-            for profile in profiles:
-                if profile.user.username == currentUser.username:
-                    currentProfile = profile
-            # the following will  take the current profile of the user and check a few
-            # parameters to execute neccessary code
-            if currentProfile:
-                # the following is going to grab the currently saved balance that exists
-                # within the users profile balance
-                balance = currentProfile.balance
-                # the following two if statments, will check to see if money is being
-                # transfered to or from the tabz account or linked bank account.
-                # if it is going to the tabz account, the users overall app balance will
-                # up by adding current balance with amount specified. The opposite goes for
-                # money being transfered out of the Tabz account
-                if main == 'Tabz':
-                    currentProfile.balance = balance - amount
-                    currentProfile.save()
-                    message = 'You have transfered ' + str(amount) + ' from your Tabz account to main account'
-                if transfer == 'Tabz':
-                    currentProfile.balance = balance + amount
-                    currentProfile.save()
-                    message = 'You have transfered ' + str(amount) + ' from your main account to Tabz account'
-                # the following is the new activity record that is created after every single
-                # transfer that goes on. THis allows the user to see exactly what kind
-                # of transfer happened and details about that transfer in the activity section
-                new_activity = Activity.objects.create(
-                    user = currentUser,
-                    description = message,
-                    status = 1,
-                    category = 1,
-                )
-            return redirect('home_page')
-    else:
-        # this is the processing that goes on if the form was not submitted. this is where
-        # everything is passed to the form page.
-        form = TransferForm()
-        message = 'please fill out the below form'
-        parameters = {
-            'form':form,
-            'currentUser':currentUser,
-            'message':message,
-        }
-        return render(request, 'tabs/user_balance.html', parameters)
-
-# this method is where the user will be able to link an external bank account to the
-# app and transfer money within the app from. I wrote this method to just test the
-# transfer method. Once the Synapse API is up and running, this part will be automated
-# and there is will be no need for this.
-def linkAccount(request):
-    currentUser = loggedInUser(request)
-    # the following is a very simple and basic for processing section.
-    if request.method == 'POST':
-        form = LinkAccountForm(request.POST)
-        # the following line is ogoing to check and make user that the form which
-        # was submitted is valid before it the form is set to the processing method
-        # at the bottom of the file.
-        if form.is_valid():
-            # the form and its content is sent to the Link Account method which will
-            # take the informaiton that was submitted and process it through the Dwolla
-            # api which will link a bank account to the users account
-            linkAccountDwolla(request, form)
-            return redirect('home_page')
-    else:
-        # the following will send the form to the html file where it will be filled
-        # out and submitted for processing.
-        form = LinkAccountForm()
-        message = 'please fill out the entire form'
-        parameters = {
-            'form':form,
-            'currentUser':currentUser,
-            'message':message,
-        }
-        return render(request, 'tabs/link_account.html', parameters)
-
-# THe following will use the Dwolla api to retrieve all of hte different bank accounts
-# that are connected and linked for the user that is logged in. This is accessable
-# through the linked accounts file in the users home page
-def linkedAccounts(request):
-    # the following grabs the logged in user
-    currentUser = loggedInUser(request)
-    # the following will send the user through the account retreival method which
-    # accesses the Dwolla table stored in the database which keeps the unique id
-    # of every account that islinked
-    accounts = searchFundingSourcesDwolla(request, currentUser)
-    print(accounts)
-    # the following will check to see if there are in fact linked accounts connected
-    # to the user. If there is no account, the user will be redirected to the page
-    # where the user will be able to link a new account
-    if accounts == None:
-        message = 'There are no linked accounts - linkedAccounts'
-        print(message)
-        return redirect('link_account')
-    # if there are accounts, they will be stored and passed to the html file where
-    # the user will be able to view all accounts and set the default.
-    for account in accounts:
-        print(type(account.source_id))
-    parameters = {
-        'currentUser':currentUser,
-        'accounts':accounts,
-    }
-    return render(request, 'tabs/linked_accounts.html', parameters)
-
-# the following method is going to be used to enable the user to set a default
-# account that will be automatically used during transacitons for quick and easy
-# processing. It can also be changed here as well
-def setDefaultSource(request, source_id):
-    currentUser = loggedInUser(request)
-    # the following will grab all of the accounts linked to the user
-    sources = Dwolla.objects.filter(user = currentUser).all()
-    # the following wil grab the account that the user has selected to become the
-    # defauly account
-    currentSource = Dwolla.objects.get(id = source_id)
-
-    # the for statment will gp through every account coonected to the user for processing
-    for source in sources:
-        # the following if statement will check to see if there is apreviously set
-        # default account
-        if source.status == 2:
-            # if there is a defauly account which is not the one selected, then the
-            # newly selected account will become the new default account and the only
-            # default will become a non-default account
-            if source.id != currentSource.id:
-                # the follownig 3 lines will set the new defauly acocunt by updating
-                # the record.
-                updated_source = currentSource
-                updated_source.status = 2
-                updated_source.save()
-                # the following will take the old default and make it a normal account
-                un_default_source = source
-                un_default_source.status = 1
-                un_default_source.save()
-                return redirect('linked_accounts')
-    if currentSource.status ==1:
-        update_source = currentSource
-        update_source.status = 2
-        update_source.save()
-
-    return redirect('linked_accounts')
-
 # the following method managed the sending of friend requests to other users and
 # storing a record of that in the database.
 def sendRequest(request, requested):
@@ -614,51 +379,38 @@ def acceptRequest(request, accepted):
             request.delete()
     return redirect('accounts')
 
-# The view is g0ing to be used to create the group and add the information for the
-# group before creating the record in the database. It will also be incharge of adding
-# the first memeber to the group (the person who created the group).
 
-#  will redirect to the adding memeber view (need to be fixed)
-def createGroup(request):
+# The following is the view that will manage the groups profile. It will be the main
+# page that users will be able to use to find all of the different information
+# regarding the specific group that is selected.
+# Passed in var:
+# groupId = the id of the group that is selected (will be changed to the group name
+# later into the development)
+def groupHome(request, groupId):
     currentUser = loggedInUser(request)
-    # following is all of th actions that are taken after the form is submitted
-    if request.method == 'POST':
-        # the following few lines will get the submitted form and create a reference
-        # code that is going to be used later.
-        # it will also assign the user that created the group
-        form = CreateGroupForm(request.POST)
-        referenceCode = generateReferenceNumber()
-        # the following validated the actual form to ensure that it was filled out
-        # with the correct inforamtion
-        if form.is_valid():
-            cd = form.cleaned_data
-            name = cd['name']
-            description = cd['description']
-            # the new_group creates an isntance of the new group and saved it into
-            # the database once it is created.
-            new_group = Group.objects.create(
-                name = name,
-                description = description,
-                reference_code = referenceCode,
-                created_by = currentUser,
-            )
-            #---------------------------------------------------------
-            # create a column that addes the person who created the group
-            #---------------------------------------------------------
-            return redirect('add_members', groupId=new_group.id)
-            #return redirect('accounts')
-            #return redirect(reverse('add_members', args=[new_group.id]))
-    else:
-        # the following is the storing of the forms
-        form = CreateGroupForm()
-        message = 'enter group info below'
-    # the following are all the objects that are going to be passed to the
-    # rendering remplate
-        parameters = {
-            'form':form,
-            'message':message,
-        }
-    return render(request, 'tabs/create_group.html', parameters)
+    group = Member.objects.filter(user = currentUser).filter(group = groupId).first()
+    # the following is going to be the currentGroup by groupId
+    currentGroup = Group.objects.get(id = groupId)
+    # the following is the group object with the id that is passed in the url
+    # group = Group.objects.get(name = groupName)
+    members = Member.objects.filter(group = group.group).all()
+    records = Record.objects.filter(group = group.group).all()
+    transactions = Transaction.objects.filter(group = group.group).all()
+    # the following is going to grab all of the balances for the members of the
+    # selected group.
+    balances = GroupBalance.objects.filter(group = group.group).all()
+    # the following is all of the activity related to the specified group
+    activities = Activity.objects.filter(group = currentGroup).all()
+    parameters = {
+        'members':members,
+        'records':records,
+        'group':group,
+        'transactions':transactions,
+        'currentUser':currentUser,
+        'balances':balances,
+        'activities':activities,
+    }
+    return render(request, 'tabs/group_home.html', parameters)
 
 # This view is what will add different members to the gorup that is selected. This
 # method will be in charge of not only adding the member to the group and keeping
@@ -1081,6 +833,21 @@ def addTransaction(request, groupId, recordId):
             }
             return render(request, 'tabs/add_individual_transaction.html', parameters)
 
+# the following is what will take care of the logout portion of the project
+# this comment is to test and make sure that the new gitlab remote is working
+def logoutPage(request):
+    # the following 3 lines will check to see if there is a username in the session
+    # which means that there is someone logged in and it will give them access to
+    # opentab.
+    if 'username' not in request.session:
+        return redirect('login')
+    else:
+        # the following will dump the stored username in the session and redirect
+        # to the login page.
+        username = request.session['username']
+        request.session.pop('username')
+        return redirect('login')
+
 # this is just a view that is used to display all of the differnet accounts and
 # information that is stored in the database.
 def accounts(request):
@@ -1139,18 +906,18 @@ def generateReferenceNumber():
     reference = randint(1, 2147483646)
     return(reference)
 
-# the following is in charge of spliting an amount by number of people.
-def SplitEven(record, amount):
-    # this will take the count number that is tracked with in teh reocrds objects
-    # ever time a new member is added to the record.
-    record_count = record.count
-    # the following will divide the amount passed though by the number of members
-    # that was stored above.
-    split_amount = amount/record_count
-    # the following ensure that the result of the divide is rounded to 2 decimal
-    # space.
-    rounded_amount = round(split_amount, 2)
-    return rounded_amount
+def loggedInUser(request):
+    if 'username' not in request.session:
+        return redirect('login_page')
+    else:
+        username = request.session['username']
+        currentUser = User.objects.get(username = username)
+        return currentUser
+
+#-------------------------------------------------------------------------------
+# all of the following methos in this section are going to be for the Dwolla integration
+# api with opentab to create and initiate transfers between two users.
+#-------------------------------------------------------------------------------
 
 # the following method is going to be used to create a new user account within the
 # Dwolla api system (sandbox/testing)
@@ -1207,6 +974,36 @@ def searchUserDwolla(request):
     # sure that the right information is retreived.
     return customer
 
+# this method is where the user will be able to link an external bank account to the
+# app and transfer money within the app from. I wrote this method to just test the
+# transfer method. Once the Synapse API is up and running, this part will be automated
+# and there is will be no need for this.
+def linkAccount(request):
+    currentUser = loggedInUser(request)
+    # the following is a very simple and basic for processing section.
+    if request.method == 'POST':
+        form = LinkAccountForm(request.POST)
+        # the following line is ogoing to check and make user that the form which
+        # was submitted is valid before it the form is set to the processing method
+        # at the bottom of the file.
+        if form.is_valid():
+            # the form and its content is sent to the Link Account method which will
+            # take the informaiton that was submitted and process it through the Dwolla
+            # api which will link a bank account to the users account
+            linkAccountDwolla(request, form)
+            return redirect('home_page')
+    else:
+        # the following will send the form to the html file where it will be filled
+        # out and submitted for processing.
+        form = LinkAccountForm()
+        message = 'please fill out the entire form'
+        parameters = {
+            'form':form,
+            'currentUser':currentUser,
+            'message':message,
+        }
+        return render(request, 'tabs/link_account.html', parameters)
+
 def linkAccountDwolla(request, form):
     currentUser = loggedInUser(request)
     currentProfile = Profile.objects.get(user = currentUser)
@@ -1241,6 +1038,71 @@ def linkAccountDwolla(request, form):
         source_name = name,
         source_id = sourceLocation
     )
+
+# THe following will use the Dwolla api to retrieve all of hte different bank accounts
+# that are connected and linked for the user that is logged in. This is accessable
+# through the linked accounts file in the users home page
+def linkedAccounts(request):
+    # the following grabs the logged in user
+    currentUser = loggedInUser(request)
+    # the following will send the user through the account retreival method which
+    # accesses the Dwolla table stored in the database which keeps the unique id
+    # of every account that islinked
+    accounts = searchFundingSourcesDwolla(request, currentUser)
+    print(accounts)
+    # the following will check to see if there are in fact linked accounts connected
+    # to the user. If there is no account, the user will be redirected to the page
+    # where the user will be able to link a new account
+    if accounts == None:
+        message = 'There are no linked accounts - linkedAccounts'
+        print(message)
+        return redirect('link_account')
+    # if there are accounts, they will be stored and passed to the html file where
+    # the user will be able to view all accounts and set the default.
+    for account in accounts:
+        print(type(account.source_id))
+    parameters = {
+        'currentUser':currentUser,
+        'accounts':accounts,
+    }
+    return render(request, 'tabs/linked_accounts.html', parameters)
+
+# the following method is going to be used to enable the user to set a default
+# account that will be automatically used during transacitons for quick and easy
+# processing. It can also be changed here as well
+def setDefaultSource(request, source_id):
+    currentUser = loggedInUser(request)
+    # the following will grab all of the accounts linked to the user
+    sources = Dwolla.objects.filter(user = currentUser).all()
+    # the following wil grab the account that the user has selected to become the
+    # defauly account
+    currentSource = Dwolla.objects.get(id = source_id)
+
+    # the for statment will gp through every account coonected to the user for processing
+    for source in sources:
+        # the following if statement will check to see if there is apreviously set
+        # default account
+        if source.status == 2:
+            # if there is a defauly account which is not the one selected, then the
+            # newly selected account will become the new default account and the only
+            # default will become a non-default account
+            if source.id != currentSource.id:
+                # the follownig 3 lines will set the new defauly acocunt by updating
+                # the record.
+                updated_source = currentSource
+                updated_source.status = 2
+                updated_source.save()
+                # the following will take the old default and make it a normal account
+                un_default_source = source
+                un_default_source.status = 1
+                un_default_source.save()
+                return redirect('linked_accounts')
+    if currentSource.status ==1:
+        update_source = currentSource
+        update_source.status = 2
+        update_source.save()
+
+    return redirect('linked_accounts')
 
 def searchFundingSourcesDwolla(request, user):
     currentUser = loggedInUser(request)
@@ -1352,84 +1214,87 @@ def createTransactionDwolla(request, sender, receiver, amount, description, grou
     transfer = app_token.post('transfers', request_body)
     transfer.headers['location']
 
-def loggedInUser(request):
-    if 'username' not in request.session:
-        return redirect('login_page')
-    else:
-        username = request.session['username']
-        currentUser = User.objects.get(username = username)
-        return currentUser
+#-------------------------------------------------------------------------------
+# all of the following have to deal with the synpase api integration with the
+# opentab api as a means to transfer money between bank account to bank account
+#-------------------------------------------------------------------------------
 
-# # the following def is going to be used in order to create a new user within the
-# # synapse api which is what is going to allow the user to link bank accounts
-# # and transfer money between different users.
-# def createUserSynapse(request):
-#     currentUser = loggedInUser(request)
-#     userProfile = Profile.objects.get(user = currentUser)
-#     # the following 5 lines will be used to grab information that is required
-#     # to be send with the synapse api call to create a user
-#     email = currentUser.email
-#     phone = userProfile.phone
-#     legal_name = userProfile.first_name + ' ' + userProfile.last_name
-#     supp_id = generateReferenceNumber()
-#     cip = currentUser.id
-#
-#     # this is all of the required arguments that are needed in order to create
-#     # a new user within the synapse api and later on linked with bank accounts
-#     argss = {
-#         'email': str(email),
-#         'phone_number': str(phone),
-#         'legal_name': str(legal_name),
-#         'note': ':)',  # optional
-#         'supp_id': str(supp_id),  # optional
-#         'is_business': False,
-#         'cip_tag': cip
-#     }
-#
-#     # the next line is what actually sends the request and returns a json response
-#     # object that can be parsed. THis gives the option of saving important
-#     # information from the response that will be stored in the database
-#     user = SynapseUser.create(clients, **argss)
-#     print(user.json)
-#     # this makes sure the response is set in json before it is parsed and data
-#     # from teh response is stored
-#     response = user.json
-#     # the if statements makes sure there is a json response that was returned
-#     if response:
-#         # the new synapse id of the person that was created is stored for later search
-#         _id = response['_id']
-#         # the id is then also saved inthe users profile within the database to
-#         # make sure that it is saved within the local database.
-#         profile = userProfile
-#         profile.synapse_id = _id
-#         profile.save()
-#
-# def searchUserSynapse(request):
-#     currentUser = loggedInUser(request)
-#     currentProfile = Profile.objects.get(user = currentUser)
-#     synapse_id = currentProfile.synapse_id
-#
-#     user = SynapseUser.by_id(clients, str(synapse_id))
-#
-#     response = user.json
-#     print(response)
-#     return response
-#
-# # def linkBankLogin(request, form):
-# #     currentUser = loggedInUser(request)
-# #     cd = form.cleaned_data
-# #     bank_name = cd['bank']
-# #     username = cd['username']
-# #     password = cd['password']
-# #
-# #     required = {
-# #         'bank_name':'wellsfargo',
-# #         'username':'omarjandali',
-# #         'password':'123123asd'
-# #     }
-# #
-# #     response = searchUserSynapse(request)
-# #
-# #     ach_us = AchUsNode.create_via_bank_login(response, **required)
-# #
-# #     ach_us.mfa_verified
+# within the following view method, this will allow the user to create a transfer of money
+# between the user's linked external bank account though Synapse and the synpase sub-account
+# that will hold the money that is usable within the application... It will take that transfer
+# and create a record for each transfer within the activity table and the balance table
+def transfers(request):
+    currentUser = loggedInUser(request)
+    # the following grabs all the profiles that will be used later on in the method.
+    # THe profile is where the users in app balance is stored and updated, We grab all
+    # of the records so that later in the method, we can check and see if they logged in
+    # user has an existing profile, or if there is a new to create a new profile to store
+    # the users balance.
+    profiles = Profile.objects.all()
+    # the following is simple form processing where the information collected from the form
+    # is stored in variables.
+    if request.method == 'POST':
+        form = TransferForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            main = cd['main']
+            transfer = cd['transfer']
+            amount = cd['amount']
+            memo = cd['memo']
+            # the following is a new transfer object that stored the transfer within the database
+            new_transfer = Transfers.objects.create(
+                user = currentUser,
+                main = main,
+                transfer = transfer,
+                amount = amount,
+                memo = memo,
+                frequency = 1,
+                status = 1,
+            )
+            # this is where the profile proccessing is happening...
+            # the forst for statement will go through each profile and see if the current
+            # user has a profile, if there is a profile, then it is stored in a variable for
+            # later use
+            for profile in profiles:
+                if profile.user.username == currentUser.username:
+                    currentProfile = profile
+            # the following will  take the current profile of the user and check a few
+            # parameters to execute neccessary code
+            if currentProfile:
+                # the following is going to grab the currently saved balance that exists
+                # within the users profile balance
+                balance = currentProfile.balance
+                # the following two if statments, will check to see if money is being
+                # transfered to or from the tabz account or linked bank account.
+                # if it is going to the tabz account, the users overall app balance will
+                # up by adding current balance with amount specified. The opposite goes for
+                # money being transfered out of the Tabz account
+                if main == 'Tabz':
+                    currentProfile.balance = balance - amount
+                    currentProfile.save()
+                    message = 'You have transfered ' + str(amount) + ' from your Tabz account to main account'
+                if transfer == 'Tabz':
+                    currentProfile.balance = balance + amount
+                    currentProfile.save()
+                    message = 'You have transfered ' + str(amount) + ' from your main account to Tabz account'
+                # the following is the new activity record that is created after every single
+                # transfer that goes on. THis allows the user to see exactly what kind
+                # of transfer happened and details about that transfer in the activity section
+                new_activity = Activity.objects.create(
+                    user = currentUser,
+                    description = message,
+                    status = 1,
+                    category = 1,
+                )
+            return redirect('home_page')
+    else:
+        # this is the processing that goes on if the form was not submitted. this is where
+        # everything is passed to the form page.
+        form = TransferForm()
+        message = 'please fill out the below form'
+        parameters = {
+            'form':form,
+            'currentUser':currentUser,
+            'message':message,
+        }
+        return render(request, 'tabs/user_balance.html', parameters)
