@@ -536,7 +536,12 @@ def setDefaultSource(request, source_id):
                 un_default_source.status = 1
                 un_default_source.save()
                 return redirect('linked_accounts')
-    return redirect('home_page')
+    if currentSource.status ==1:
+        update_source = currentSource
+        update_source.status = 2
+        update_source.save()
+
+    return redirect('linked_accounts')
 
 # the following method managed the sending of friend requests to other users and
 # storing a record of that in the database.
@@ -898,10 +903,27 @@ def addTransaction(request, groupId, recordId):
                         # in teh following lines all of the existing trnasaciton
                         # record will be updated to include the correct amount due
                         # as well as the description that was submitted for the
-                        # specific transaction
+                        # # specific transaction
+                        # print(trans.user.username)
                         trans.description = description
                         trans.amount = split_amount
                         trans.save()
+
+                        for member in members:
+                            if trans.user == member.user:
+                                currentHost = host.user
+                                sender = trans
+                                print(currentHost.username)
+                                print(sender.user.username)
+                                transaction = createTransactionDwolla(request, sender.user, currentHost, split_amount, description, groupId)
+                                if transaction == 'current user':
+                                    message = 'transaction failed'
+                                    print(message)
+                                    return redirect('link_account')
+                                if transaction == 'non user':
+                                    message = 'transaction failed'
+                                    print(message)
+                                    return redirect('group_home', groupId)
 
                         # the follwoing is going to be where the people involved
                         # in the transaction are going to have thier member amounts
@@ -920,7 +942,7 @@ def addTransaction(request, groupId, recordId):
                         # to include the maount money that is supposed to be sent to
                         # the host
                         received = split_amount * count
-                        fuding = host.funding
+                        funding = host.funding
                         update_host = host
                         update_host.funding = funding + received
                         update_host.save()
@@ -935,7 +957,6 @@ def addTransaction(request, groupId, recordId):
                             category = 1,
                         )
 
-                        createTransactionDwolla()
                 # this will take the recently added transaction and add the users
                 # amount due after even split and subtract it from the user4s
                 # group account balance.
@@ -1000,6 +1021,16 @@ def addTransaction(request, groupId, recordId):
                     currentTrans.amount = finalAmount
                     currentTrans.description = currentDescription
                     currentTrans.save()
+
+                    # the following willl set the sending user who will transfer money
+                    # form his account to the hosts account,
+                    sender = currentTrans.user
+                    # thew following is going to process and send the transaction
+                    # info to the method
+                    createTransactionDwolla(request, sender, host, findAmount, currentDescription)
+
+                    # the following is going to create the new activity and store it so that
+                    # both all the poeple are notified of a new expense.
                     activityDescription = currentTrans.user.username + '\'s amount due is ' + str(finaAmount) + ' for ' + currentDescription
                     new_member_activty = Activity.objects.create(
                         user = trans.user,
@@ -1236,6 +1267,90 @@ def searchFundingSourcesDwolla(request, user):
         print(name)
         print(_id)
     return sources
+
+def findDefaultSource(request, user):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    defaults = Dwolla.objects.filter(user = user).all()
+    if defaults == None:
+        return defaults
+    if defaults != None:
+        for default in defaults:
+            if default.status == 2:
+                userDefault = default
+                return userDefault
+            else:
+                userDefault = Dwolla.objects.filter(user = user).first()
+                return userDefault
+
+def createTransactionDwolla(request, sender, receiver, amount, description, group_id):
+    # cheese = 'cheese'
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    senderMessage = 'sender = ' + str(sender.username)
+    receiverMessage = 'receiver = ' + str(receiver.username)
+    print(senderMessage)
+    print(receiverMessage)
+
+    senderSource = findDefaultSource(request, sender)
+    if senderSource == None:
+        if sender == currentUser:
+            message = 'logged in user does not have account'
+            failure = 'current user'
+            print(message)
+            return failure
+        if sender != currentUser:
+            message = 'non logged in user has no account'
+            failure = 'non user'
+            print(message)
+            return failure
+    if senderSource:
+        message = 'sender has default account set'
+        print(message)
+        sender_id = senderSource.source_id
+        print(sender_id)
+
+    receiverSources = Dwolla.objects.filter(user = receiver).all()
+    for source in receiverSources:
+        if source.status == 2:
+            message = 'default account is set'
+            print(message)
+            receiver_id = source.source_id
+            print(receiver_id)
+
+    paymentId = generateReferenceNumber()
+
+    print(paymentId)
+
+    request_body = {
+      '_links': {
+        'source': {
+          'href': str(sender_id)
+        },
+        'destination': {
+          'href': str(receiver_id)
+        }
+      },
+      'amount': {
+        'currency': 'USD',
+        'value': str(amount)
+      },
+      'metadata': {
+        'paymentId': str(paymentId),
+        'note': str(description)
+      },
+      'clearing': {
+        'destination': 'next-available'
+      },
+      'correlationId': '8a2cdc8d-629d-4a24-98ac-40b735229fe2'
+    }
+
+    print(request_body)
+
+    transfer = app_token.post('transfers', request_body)
+    transfer.headers['location']
 
 def loggedInUser(request):
     if 'username' not in request.session:

@@ -43,7 +43,7 @@
   <h3>members</h3>
   {% for member in members %}
     <p>ID:{{ member.id }}, USERNAME:{{ member.user.username }}, GROUP:{{ member.group.name }},
-      STATUS:{{ member.status }}, CREATED:{{ member.created }}</p>
+      STATUS:{{ member.status }}, FUNDING:{{member.funding}}, CREATED:{{ member.created }}</p>
   {% endfor %}
   <h3>records</h3>
   {% for record in records %}
