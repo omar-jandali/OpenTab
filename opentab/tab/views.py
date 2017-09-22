@@ -1292,15 +1292,25 @@ def createTransactionDwolla(request, sender, receiver, amount, description, grou
 # opentab api as a means to transfer money between bank account to bank account
 #-------------------------------------------------------------------------------
 
+# the following is going to create a new user within the Syanpse added which is needed
+#in order to keep refernce of each user as well as the accounts and transfers that are
+# processed later on
 def createUserSynapse(request):
+    # the following grabs the current suer and profile for the current user which
+    # will be used to retrieve and update informaiton pretaining to the new user
     currentUser = loggedInUser(request)
     profile= Profile.objects.get(user = currentUser)
 
+    # the following saves a reference to the current profile
     currentProfile = profile
+    # the following lines will store inforaiton that is sent with the new user
+    # request rather than enter it directly to the arguments
     legal_name = currentProfile.first_name + " " + currentProfile.last_name
     note = legal_name + " has just created his synapse profile "
     supp_id = generateReferenceNumber()
     cip_tag = currentUser.id
+    # the following is all of the information that is required in order to make a
+    # new user within the Synapse application
     args = {
         'email':str(currentUser.email),
         'phone_number':str(currentProfile.phone),
@@ -1311,10 +1321,13 @@ def createUserSynapse(request):
         'cip_tag':cip_tag,
     }
     print(args)
+    # the following is the request to the synapse api as well as the returned
+    # json that contains information that needs to ba saved in local database
     create_user = SynapseUser.create(client, **args)
     print(create_user.json)
     response = create_user.json
-
+    # the following updates the current profile to add the users synapse id within
+    # the local database.
     if response:
         synapse_id = response['_id']
         updateProfile = currentProfile
