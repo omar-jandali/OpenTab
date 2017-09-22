@@ -8,7 +8,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.forms import formset_factory
 from django.db.models import Q
-import os, requests
+import os, requests, json
 
 from random import randint
 from decimal import Decimal
@@ -66,8 +66,8 @@ args = {
 
 # this is the call that takes the credentials and sends the connect request to
 # validate credentials
-clients = Client(**args)
-print(clients)
+client = Client(**args)
+print(client)
 
 #-------------------------------------------------------------------------------
 # the following section is the actual code for the core of the project. Not an
@@ -159,8 +159,9 @@ def profileSetup(request):
                     phone = phone,
                     privacy = privacy,
                 )
-                createUserDwolla(request, ssn)
-                searchUserDwolla(request)
+                # createUserDwolla(request, ssn)
+                # searchUserDwolla(request)
+                createUserSynapse(request)
                 return redirect('home_page')
         else:
             # this is what is going to be saved into the html file and used to
@@ -1290,6 +1291,35 @@ def createTransactionDwolla(request, sender, receiver, amount, description, grou
 # all of the following have to deal with the synpase api integration with the
 # opentab api as a means to transfer money between bank account to bank account
 #-------------------------------------------------------------------------------
+
+def createUserSynapse(request):
+    currentUser = loggedInUser(request)
+    profile= Profile.objects.get(user = currentUser)
+
+    currentProfile = profile
+    legal_name = currentProfile.first_name + " " + currentProfile.last_name
+    note = legal_name + " has just created his synapse profile "
+    supp_id = generateReferenceNumber()
+    cip_tag = currentUser.id
+    args = {
+        'email':str(currentUser.email),
+        'phone_number':str(currentProfile.phone),
+        'legal_name':str(legal_name),
+        'note': str(note),
+        'supp_id':str(supp_id),
+        'is_business':False,
+        'cip_tag':cip_tag,
+    }
+    print(args)
+    create_user = SynapseUser.create(client, **args)
+    print(create_user.json)
+    response = create_user.json
+
+    if response:
+        synapse_id = response['_id']
+        updateProfile = currentProfile
+        updateProfile.synapse_id = synapse_id
+        updateProfile.save()
 
 # within the following view method, this will allow the user to create a transfer of money
 # between the user's linked external bank account though Synapse and the synpase sub-account

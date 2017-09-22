@@ -140,6 +140,7 @@ class Profile(models.Model):
     privacy = models.SmallIntegerField(default=1)  # user
     balance = models.DecimalField(decimal_places=2, max_digits=9, default=0)
     dwolla_id = models.CharField(max_length=200, default='https://api-sandbox.dwolla.com')
+    synapse_id = models.CharField(max_length=200, default='123456789')
     created = models.DateTimeField(auto_now_add=True)  # server
 
 # the following need to be sent with the paypal api to create a new user within
@@ -171,3 +172,14 @@ class Dwolla(models.Model):
     source_name = models.CharField(max_length=100, default='customer id')
     source_id = models.CharField(max_length=100, default='funding source')
     status = models.SmallIntegerField(default=1)
+
+
+# The following models are going to be used to store all of the synapse api informaiton
+# related to the currentUser. THis includes id, accounts, transfers, and more
+
+# the following is going to store important credentials for synapse users
+class SynapseUsers(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    _id = models.IntegerField()
+    cip_tag = models.IntegerField()
+    link = models.CharField(max_length=200, default='https://uat-api.synapsefi.com/v3.1')
