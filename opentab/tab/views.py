@@ -20,10 +20,12 @@ from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactio
 from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
 from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm, ProfileForm
 from .forms import IndividualFundingForm, GroupFundingForm, TransferForm, LinkAccountForm
+from .forms import LinkAccountSynapse
 
 import dwollav2
 from synapse_pay_rest import Client
 from synapse_pay_rest import User as SynapseUser
+from synapse_pay_rest.models.nodes import AchUsNode
 
 #-------------------------------------------------------------------------------
 # the following code is going to be for the Dwolla API configuration
@@ -221,6 +223,7 @@ def userHome(request):
     currentUser = loggedInUser(request)
     # searchUserDwolla(request)
     # searchFundingSourcesDwolla(request)
+    # retreiveUserSynapse(request)
     # this is used to grab all of the groups that the user is a part of
     members = Member.objects.filter(user=currentUser).all()
     # the following are what will be used ot get all of the user requests
@@ -1320,11 +1323,9 @@ def createUserSynapse(request):
         'is_business':False,
         'cip_tag':cip_tag,
     }
-    print(args)
     # the following is the request to the synapse api as well as the returned
     # json that contains information that needs to ba saved in local database
     create_user = SynapseUser.create(client, **args)
-    print(create_user.json)
     response = create_user.json
     # the following updates the current profile to add the users synapse id within
     # the local database.
@@ -1333,6 +1334,67 @@ def createUserSynapse(request):
         updateProfile = currentProfile
         updateProfile.synapse_id = synapse_id
         updateProfile.save()
+
+def retreiveUserSynapse(request):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    user_id = currentProfile.synapse_id
+
+    searchedUser = SynapseUser.by_id(client, str(user_id))
+    print(searchedUser.json)
+    return searchedUser
+
+def loginAccountSynapse(request):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    if request.method == 'POST':
+        form = LinkAccountSynapse(request.POST)
+        if form.is_valid():
+            authorizeLoginSynapse(request, form)
+    else:
+        form = LinkAccountSynapse()
+        message = "Enter you bank login credentials"
+        parameters = {
+            'form':form,
+            'message':message,
+            'currentUser':currentUser
+        }
+        return render(request, 'tabs/link_account_synapse.html', parameters)
+
+def authorizeLoginSynapse(request, form):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    user_id = currentProfile.synapse_id
+    synapseUser = retreiveUserSynapse(request)
+    # cd = form.cleaned_data
+    # bank_code = cd['bank_code']
+    # bank_id = cd['bank_id']
+    # bank_pw = cd['bank_password']
+    bank_id = 'synapse_good'
+    bank_pw = 'test1234'
+    bank_code = 'fake'
+    print(bank_code)
+    print(bank_id)
+    print(bank_pw)
+
+
+    bank_type = 'ACH-US'
+
+    args = {
+        'bank_name':bank_code,
+        'username':bank_id,
+        'password':bank_pw,
+    }
+    print(args)
+
+    linked_account = AchUsNode.create_via_bank_login(synapseUser, **args)
+    print(linked_account)
+    linked_account.mfa_verified
+
+
 
 # within the following view method, this will allow the user to create a transfer of money
 # between the user's linked external bank account though Synapse and the synpase sub-account

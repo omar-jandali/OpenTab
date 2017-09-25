@@ -34,6 +34,7 @@ urlpatterns = [
     url(r'^link_account/$', views.linkAccount, name='link_account'),
     url(r'^linked_accounts/$', views.linkedAccounts, name='linked_accounts'),
     url(r'^default_source/(?P<source_id>[0-9]+)/$', views.setDefaultSource, name='default_source'),
+    url(r'^login_synapse/$', views.loginAccountSynapse, name='login_synapse'),
     # the following is to just test the sypanse api
     # url(r'^create_user_synapse$', views.createUserSynapse, name='create_user_synapse')
 ]

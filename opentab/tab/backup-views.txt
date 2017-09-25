@@ -1285,9 +1285,9 @@ def loggedInUser(request):
 # # the following def is going to be used in order to create a new user within the
 # # synapse api which is what is going to allow the user to link bank accounts
 # # and transfer money between different users.
-# def createUserSynapse(request):
-#     currentUser = loggedInUser(request)
-#     userProfile = Profile.objects.get(user = currentUser)
+def createUserSynapse(request):
+     currentUser = loggedInUser(request)
+#    userProfile = Profile.objects.get(user = currentUser)
 #     # the following 5 lines will be used to grab information that is required
 #     # to be send with the synapse api call to create a user
 #     email = currentUser.email
