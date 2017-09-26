@@ -59,15 +59,15 @@ def authorizeLoginSynapse(request, form):
     linked_account = AchUsNode.create_via_bank_login(synapseUser, **args)
     # the error that I get is the following
 
-    # ValueError at /login_synapse/
-    # The view tab.views.loginAccountSynapse didn't return an HttpResponse object. It returned None instead.
-    # Request Method:	POST
-    # Request URL:	http://127.0.0.1:8000/login_synapse/
-    # Django Version:	1.11.5
-    # Exception Type:	ValueError
-    # Exception Value:
-    # The view tab.views.loginAccountSynapse didn't return an HttpResponse object. It returned None instead.
-    # Exception Location:	/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/django/core/handlers/base.py in _get_response, line 198
+    ValueError at /login_synapse/
+    The view tab.views.loginAccountSynapse didn't return an HttpResponse object. It returned None instead.
+    Request Method:	POST
+    Request URL:	http://127.0.0.1:8000/login_synapse/
+    Django Version:	1.11.5
+    Exception Type:	ValueError
+    Exception Value:
+    The view tab.views.loginAccountSynapse didn't return an HttpResponse object. It returned None instead.
+    Exception Location:	/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/django/core/handlers/base.py in _get_response, line 198
 
     # the following is the second type of request I send and get a different error.
     # with this request, I just send the synapse users stored ID which is assigned
@@ -75,15 +75,15 @@ def authorizeLoginSynapse(request, form):
     linked_account = AchUsNode.create_via_bank_login(user_id, **args)
     # the error that I get is the following
 
-    # AttributeError at /login_synapse/
-    # 'str' object has no attribute 'client'
-    # Request Method:	POST
-    # Request URL:	http://127.0.0.1:8000/login_synapse/
-    # Django Version:	1.11.5
-    # Exception Type:	AttributeError
-    # Exception Value:
-    # 'str' object has no attribute 'client'
-    # Exception Location:	/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/synapse_pay_rest/models/nodes/ach_us_node.py in create_via_bank_login, line 39
+    AttributeError at /login_synapse/
+    'str' object has no attribute 'client'
+    Request Method:	POST
+    Request URL:	http://127.0.0.1:8000/login_synapse/
+    Django Version:	1.11.5
+    Exception Type:	AttributeError
+    Exception Value:
+    'str' object has no attribute 'client'
+    Exception Location:	/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/synapse_pay_rest/models/nodes/ach_us_node.py in create_via_bank_login, line 39
 
     # I can not seem to figure out where this error is coming from or how to fix
     # the error so that I can authenticate the users login and connect a bank account
