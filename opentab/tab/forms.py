@@ -4,7 +4,7 @@
 from django import forms
 from django.forms import ModelForm, extras
 from tab.models import Group, Member, Record, Transaction, Profile, UserBalance
-from tab.models import GroupBalance, Transfers, Accounts
+from tab.models import GroupBalance, Transfers, Accounts, Expense
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -42,6 +42,25 @@ class AddMembersForm(forms.ModelForm):
     class Meta:
         model = Member
         fields = ['user']
+
+# the following are for the new type of expense system that is going to be added
+#------------------------------------------------------------------------------
+class ExpenseForm(forms.ModelForm):
+    split_choices = (('1', 'even'),
+                      ('2', 'individual'))
+    split = forms.TypedChoiceField(
+        choices=split_choices, widget=forms.RadioSelect, coerce=int
+    )
+    class Meta:
+        model = Expense
+        fields = ['name', 'split']
+
+class UpdateExpenseForm(forms.ModelForm):
+    class Meta:
+        model = Expense
+        fields = ['amount', 'description']
+
+#------------------------------------------------------------------------------
 
 class AddRecordForm(forms.ModelForm):
 

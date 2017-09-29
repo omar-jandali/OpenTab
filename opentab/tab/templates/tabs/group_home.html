@@ -13,7 +13,10 @@
   <h3>members</h3>
   {% for member in members %}
     <p>
-      {{ member.user.username }} -- {{ member.funding }}
+      {{ member.user.username }}
+      {% if member.status == 2 %}
+        -- host
+      {% endif %}
       {% if member.user.username == currentUser.username %}
         {{ total_amount }}
       {% endif %}
@@ -24,16 +27,14 @@
     <p>{{ balance.user }}, {{ balance.amount }}, {{ balance.memo }}, {{ balance.transfer }}</p>
   {% endfor %}
   <h3>records</h3>
-  {% for record in records %}
-    <p>{{ record.description }}</p>
-    {% for trans in transactions %}
-      {% if trans.record.id == record.id %}
-        <p>{{ trans.user.username }}, {{ trans.amount }}, {{ trans.description }}</p>
-      {% endif %}
-    {% endfor %}
+  {% for expense in expenses %}
+    <p>
+      {{ expense.user.username }} - {{ expense.group.name }} - {{ expense.amount }} -
+      {{ expense.description }} - {{ expense.name }} - {{ expense.split }}
+    </p>
   {% endfor %}
   <p>
-    <a href="{% url 'add_record' group.group.id %}">
+    <a href="{% url 'add_expense' group.group.id %}">
       new record
     </a>
   </p>

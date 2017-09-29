@@ -96,6 +96,18 @@ class Transaction(models.Model):
     record = models.ForeignKey(Record, default=1, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
 
+#---------
+class Expense(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    amount = models.DecimalField(decimal_places=2, max_digits=9, default=0)
+    description = models.CharField(max_length=200, default = 'expense')
+    name = models.CharField(max_length=100, default = 'group name')
+    status = models.SmallIntegerField(default = 1)
+    split = models.SmallIntegerField(default = 1)
+    created = models.DateTimeField(auto_now_add=True)
+#----------
+
 class UserBalance(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     amount = models.DecimalField(decimal_places=2, max_digits=9, default=0)
@@ -114,6 +126,7 @@ class GroupBalance(models.Model):
 class Activity(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE) #server
     group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True) #server
+    reference = models.CharField(max_length=100, default='omar')
     description = models.CharField(max_length=200) #server
     status = models.SmallIntegerField(default=1)
     category = models.SmallIntegerField(default=1)

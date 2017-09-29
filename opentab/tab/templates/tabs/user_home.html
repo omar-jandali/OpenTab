@@ -20,18 +20,38 @@
       send reqest
     </a>
   {% endif %}
-  <h3>Activity</h3>
+  <h3>Activity
+    {% if activity_count > 0 %}
+      - {{ activity_count }}
+    {% endif %}
+  </h3>
   {% for activity in activities %}
-    <p>{{ activity.description }}</p>
-    <!-- {% if activityGroup == activity.group %}
-      <p>{{ activity.group.name }}</p>
-    {% endif %} -->
-    {% for member in members %}
-      {% if member.group == activity.group %}
-        <p>{{ activity.description }}</p>
-      {% endif %}
-    {% endfor %}
+    {% if activity.status == 1 %}
+      <strong>
+        <p>
+          <a href="{% url 'home_page' %}">
+            {% if activity.group %}
+              <a href="{% url 'group_home' activity.group.id %}">{{ activity.group.name }} -
+            {% endif %}
+            {{ activity.description }} - {{ activity.reference }} - {{ activity.category }}
+          </a>
+        </p>
+
+      </strong>
+    {% endif %}
+    {% if activity.status == 2 %}
+      <p>
+        <a href="{% url 'home_page' %}">
+          {% if activity.group %}
+            <a href="{% url 'group_home' activity.group.id %}">{{ activity.group.name }} -
+          {% endif %}
+          {{ activity.description }} - {{ activity.reference }} - {{ activity.category }}
+        </a>
+      </p>
+    {% endif %}
   {% endfor %}
+  <a href="{% url 'clear_all_activities' %}">Mark all as read</a>
+  <!--The following is the start of the requests part of the html file-->
   {% if requester %}
   <h3>Pending Requests</h3>
     {% for request in requester %}
