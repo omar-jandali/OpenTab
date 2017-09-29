@@ -13,12 +13,12 @@ import os, requests, json
 from random import randint
 from decimal import Decimal
 
-from .models import Group, User, Member, Record, Transaction, Request, Friend, Profile
-from .models import UserBalance, GroupBalance, Activity, Accounts, Transfers, Dwolla, Expense
+from .models import Group, User, Member, Request, Friend, Profile, Expense
+from .models import UserBalance, GroupBalance, Activity, Accounts, Transfers, Dwolla
 
-from .forms import CreateGroupForm, AddMembersForm, AddRecordForm, AddTransactionForm
-from .forms import SignupForm, LoginForm, EvenSplitTransactionForm
-from .forms import IndividualSplitTransactionForm, SignupForm, LoginForm, ProfileForm
+from .forms import CreateGroupForm, AddMembersForm
+from .forms import SignupForm, LoginForm
+from .forms import SignupForm, LoginForm, ProfileForm
 from .forms import IndividualFundingForm, GroupFundingForm, TransferForm, LinkAccountForm
 from .forms import LinkAccountSynapse, ExpenseForm, UpdateExpenseForm
 
@@ -478,9 +478,6 @@ def groupHome(request, groupId):
     members = Member.objects.filter(group = group.group).all()
 
     expenses = Expense.objects.filter(group = group.group).all()
-
-    records = Record.objects.filter(group = group.group).all()
-    transactions = Transaction.objects.filter(group = group.group).all()
     # the following is going to grab all of the balances for the members of the
     # selected group.
     balances = GroupBalance.objects.filter(group = group.group).all()
@@ -488,9 +485,7 @@ def groupHome(request, groupId):
     activities = Activity.objects.filter(group = currentGroup).all()
     parameters = {
         'members':members,
-        'records':records,
         'group':group,
-        'transactions':transactions,
         'currentUser':currentUser,
         'balances':balances,
         'activities':activities,
@@ -671,7 +666,7 @@ def updateExpenseEven(request, groupId, groupName):
                         status = 1,
                         category = 4,
                     )
-            return redirect('group_home', grouId = currentGroup.id)
+            return redirect('group_home', groupId = currentGroup.id)
     else:
         message = 'Please complete form below'
         form = UpdateExpenseForm()
@@ -746,48 +741,6 @@ def updateExpenseIndividual(request, groupId, groupName):
         return render(request, 'tabs/update_expense_individual.html', parameters)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-# This view is what will be in charge of adding the different types of records to
-# the group and keeping track of all the expense amounts and dealing with the splitting
-# of the expense.
-def addRecord(request, groupId):
-    currentUser = loggedInUser(request)
-    selectedGroup = Member.objects.filter(user = currentUser).filter(group = groupId).first()
-    group = Group.objects.get(id = selectedGroup.group.id)
-
-
-# This is the view that is going to be manage the creation of different
-# transactions that are going to be used to track how much money each person is
-# paying for each record
-def addTransaction(request, groupId, recordId):
-    currentUser = loggedInUser(request)
-    # the group related to the transactions is selected and stored in a variable
-    group = Group.objects.get(id=groupId)
-    # the record related to the transactions is selected and stored in a variable
-    record = Record.objects.get(id=recordId)
-
-
-
-
-
-
-
-
-
-
-
-
 # the following is what will take care of the logout portion of the project
 # this comment is to test and make sure that the new gitlab remote is working
 def logoutPage(request):
@@ -851,11 +804,10 @@ def accounts(request):
     groups = Group.objects.all()
     members = Member.objects.all()
     users = User.objects.all()
-    records = Record.objects.all()
-    transactions = Transaction.objects.all()
     requests = Request.objects.all()
     friends = Friend.objects.all()
     profiles = Profile.objects.all()
+    expenses = Expense.objects.all()
     activities = Activity.objects.all()
     accounts = Accounts.objects.all()
     transfers = Transfers.objects.all()
@@ -869,11 +821,10 @@ def accounts(request):
         'groups':groups,
         'members':members,
         'users':users,
-        'records':records,
-        'transactions':transactions,
         'requests':requests,
         'friends':friends,
         'profiles':profiles,
+        'expenses':expenses,
         'activities':activities,
         'accounts':accounts,
         'transfers':transfers,

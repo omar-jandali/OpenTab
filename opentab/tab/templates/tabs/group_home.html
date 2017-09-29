@@ -26,7 +26,7 @@
   {% for balance in balances %}
     <p>{{ balance.user }}, {{ balance.amount }}, {{ balance.memo }}, {{ balance.transfer }}</p>
   {% endfor %}
-  <h3>records</h3>
+  <h3>Expenses</h3>
   {% for expense in expenses %}
     <p>
       {{ expense.user.username }} - {{ expense.group.name }} - {{ expense.amount }} -
@@ -35,7 +35,7 @@
   {% endfor %}
   <p>
     <a href="{% url 'add_expense' group.group.id %}">
-      new record
+      New Expense
     </a>
   </p>
 {% endblock %}

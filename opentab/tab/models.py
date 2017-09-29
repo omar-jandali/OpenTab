@@ -79,23 +79,6 @@ class Member(models.Model):
     funding = models.DecimalField(decimal_places=2, max_digits=9, default=0.00)
     created = models.DateTimeField(auto_now_add=True) #server
 
-class Record(models.Model):
-    description = models.CharField(max_length=20, default='group expense')
-    split = models.SmallIntegerField(default=1) #user
-    count = models.IntegerField(default=0)
-    status = models.SmallIntegerField(choices=RECORD_STATUS_CHOICES, default=1) #server
-    group = models.ForeignKey(Group, default=1, on_delete=models.CASCADE) #server
-    user = models.ForeignKey(User, default=1, on_delete=models.CASCADE) #server
-    created = models.DateTimeField(auto_now_add=True) #server
-
-class Transaction(models.Model):
-    amount = models.DecimalField(decimal_places=2, max_digits=9,default=0.00)
-    description = models.CharField(max_length=250)
-    group = models.ForeignKey(Group, default=1, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, default=1, on_delete=models.CASCADE)
-    record = models.ForeignKey(Record, default=1, on_delete=models.CASCADE)
-    created = models.DateTimeField(auto_now_add=True)
-
 #---------
 class Expense(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

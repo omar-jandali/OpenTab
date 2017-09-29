@@ -24,16 +24,6 @@ urlpatterns = [
     url(r'^(?P<groupId>[0-9]+)/(?P<groupName>[\w+]+)/update_expense_even/$', views.updateExpenseEven, name="update_expense_even"),
     url(r'^(?P<groupId>[0-9]+)/(?P<groupName>[\w+]+)/update_expense_individual/$',
         views.updateExpenseIndividual, name="update_expense_individual"),
-
-    # this url is going to be the same as the one above but with the addRecord
-    # at the end to add a new record or expense to the group
-    url(r'^(?P<groupId>[0-9]+)/add_record/$', views.addRecord,
-    name='add_record'),
-    # when you want to add a transaction which is the part that will be where the
-    # user splits the bill evenly or individually and enters the amount for the
-    # expense and checks to make sure everything is correct before creating the expense
-    url(r'^(?P<groupId>[0-9]+)/(?P<recordId>[0-9]+)/add_transaction/$',
-        views.addTransaction, name='add_transactions'),
     url(r'^group/(?P<groupId>[0-9]+)/$', views.groupHome, name='group_home'),
     url(r'^accounts/$', views.accounts, name='accounts'),
     url(r'^link_account/$', views.linkAccount, name='link_account'),

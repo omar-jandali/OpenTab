@@ -46,16 +46,10 @@
     <p>ID:{{ member.id }}, USERNAME:{{ member.user.username }}, GROUP:{{ member.group.name }},
       STATUS:{{ member.status }}, FUNDING:{{member.funding}}, CREATED:{{ member.created }}</p>
   {% endfor %}
-  <h3>records</h3>
-  {% for record in records %}
-    <p>ID:{{ record.id }}, STATUS:{{ record.status }}, COUNT:{{record.count}}, SPLIT:{{ record.split }},
-      NAME:{{ record.group.name }}, USERNAME:{{ record.user.username }}, CREATED:{{ record.created }} </p>
-  {% endfor %}
-  <h3>transactions</h3>
-  {% for transaction in transactions %}
-    <p>ID:{{ transaction.id }}, USER:{{ transaction.user.username }},
-      AMOUNT:{{ transaction.amount }}, DESCRIPTION:{{ transaction.description }},GROUP:{{ transaction.group.id }},
-      RECORD:{{ transaction.record.id }}, CREATED:{{ transaction.created }}</p>
+  <h3>Expenses</h3>
+  {% for expense in expenses %}
+    <p>{{ expense.user.username }}, {{ expense.group.name }}, {{ expense.amount }}
+        {{ expense.description }}, {{ expense.name }}, {{ expense.status }}</p>
   {% endfor %}
   <h3>Dwolla Accounts</h3>
   {% if dwollas %}

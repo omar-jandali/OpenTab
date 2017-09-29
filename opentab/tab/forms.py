@@ -3,7 +3,7 @@
 # that i think need to be created are the following...
 from django import forms
 from django.forms import ModelForm, extras
-from tab.models import Group, Member, Record, Transaction, Profile, UserBalance
+from tab.models import Group, Member, Profile, UserBalance
 from tab.models import GroupBalance, Transfers, Accounts, Expense
 
 from django.contrib.auth.models import User
@@ -61,34 +61,6 @@ class UpdateExpenseForm(forms.ModelForm):
         fields = ['amount', 'description']
 
 #------------------------------------------------------------------------------
-
-class AddRecordForm(forms.ModelForm):
-
-    split_choices = (('1', 'even'),
-                      ('2', 'individual'))
-    split = forms.TypedChoiceField(
-        choices=split_choices, widget=forms.RadioSelect, coerce=int
-    )
-    class Meta:
-        model = Record
-        fields = ['description', 'split']
-
-class AddTransactionForm(forms.ModelForm):
-    class Meta:
-        model = Transaction
-        fields = ['amount', 'description', 'user']
-
-class EvenSplitTransactionForm(forms.ModelForm):
-    class Meta:
-        model = Transaction
-        fields = ['amount', 'description']
-    # amount = forms.DecimalField(label='Total Amount', decimal_places=2, max_digits=9)
-    # description = forms.CharField(max_length=250)
-
-class IndividualSplitTransactionForm(forms.ModelForm):
-    class Meta:
-        model = Transaction
-        fields = ['amount', 'description']
 
 class IndividualFundingForm(forms.ModelForm):
     transfer_choices = (('1', 'opentab-to-Payapal'),
