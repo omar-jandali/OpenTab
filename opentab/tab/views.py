@@ -1197,6 +1197,7 @@ def loginAccountSynapse(request):
         form = LinkAccountSynapse(request.POST)
         if form.is_valid():
             authorizeLoginSynapse(request, form)
+            return redirect('home_page')
     else:
         form = LinkAccountSynapse()
         message = "Enter you bank login credentials"
@@ -1212,6 +1213,7 @@ def authorizeLoginSynapse(request, form):
     currentProfile = Profile.objects.get(user = currentUser)
 
     user_id = currentProfile.synapse_id
+    print(user_id)
     synapseUser = SynapseUser.by_id(client, str(user_id))
     print(synapseUser)
     # cd = form.cleaned_data
@@ -1235,10 +1237,16 @@ def authorizeLoginSynapse(request, form):
     }
     print(args)
 
-    linked_account = AchUsNode.create_via_bank_login(user_id, **args)
-    print(linked_account)
-    linked_account.mfa_verified
+    ach_us = AchUsNode.create_via_bank_login(synapseUser, **args)
+    print(ach_us)
 
+    verification = ach_us.mfa_verified
+    print(verification)
+
+    if verification == False:
+        ach_us.mfa_message
+        nodes = ach_us.answer_mfa('test_answer')
+        ach_us.mfa_verified
 
 
 # within the following view method, this will allow the user to create a transfer of money
