@@ -5,6 +5,9 @@
     <a href="{% url 'home_page' %}">Home</a>
   </h3>
   <p>testing page</p>
+  <p>
+    {{ accountsText }}
+  </p>
   {% for account in accounts %}
     <p>{{ account.id }}, {{account.user.username}}, {{ account.source_name }}, {{ account.source_id }},
     {{ account.status }}

@@ -8,6 +8,8 @@
   <h3><a href="{% url 'link_account' %}">Link Account</a></h3>
   <h3><a href="{% url 'login_synapse' %}">Link Account (Synapse)</a></h3>
   <h3><a href="{% url 'linked_accounts' %}">Linked Account</a></h3>
+  <h3><a href="{% url 'sample_transaction' %}">Sample Transaction</a></h3>
+
   <form action="" method="POST">
     {% csrf_token %}
     <input type="text" name="searched">

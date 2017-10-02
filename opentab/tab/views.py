@@ -12,6 +12,7 @@ import os, requests, json
 
 from random import randint
 from decimal import Decimal
+from pprint import pprint
 
 from .models import Group, User, Member, Request, Friend, Profile, Expense
 from .models import UserBalance, GroupBalance, Activity, Accounts, Transfers, Dwolla
@@ -23,7 +24,7 @@ from .forms import IndividualFundingForm, GroupFundingForm, TransferForm, LinkAc
 from .forms import LinkAccountSynapse, ExpenseForm, UpdateExpenseForm
 
 import dwollav2
-from synapse_pay_rest import Client
+from synapse_pay_rest import Client, Node, Transaction
 from synapse_pay_rest import User as SynapseUser
 from synapse_pay_rest.models.nodes import AchUsNode
 
@@ -224,6 +225,8 @@ def userHome(request):
     # searchUserDwolla(request)
     # searchFundingSourcesDwolla(request)
     # retreiveUserSynapse(request)
+    # listedLinkAccounts(request)
+    # createTransaction(request)
     # this is used to grab all of the groups that the user is a part of
     members = Member.objects.filter(user=currentUser).all()
     # the following are what will be used ot get all of the user requests
@@ -967,6 +970,8 @@ def linkedAccounts(request):
     # the following will send the user through the account retreival method which
     # accesses the Dwolla table stored in the database which keeps the unique id
     # of every account that islinked
+    accountsJson = listedLinkAccounts(request)
+    accountsText = str(accountsJson)
     accounts = searchFundingSourcesDwolla(request, currentUser)
     print(accounts)
     # the following will check to see if there are in fact linked accounts connected
@@ -983,6 +988,7 @@ def linkedAccounts(request):
     parameters = {
         'currentUser':currentUser,
         'accounts':accounts,
+        'accountsText':accountsText,
     }
     return render(request, 'tabs/linked_accounts.html', parameters)
 
@@ -1178,26 +1184,44 @@ def createUserSynapse(request):
         updateProfile.synapse_id = synapse_id
         updateProfile.save()
 
+# the following method is where the current user will go to retreive their synapse
+# account informaiton in order to make other synapse requests.
 def retreiveUserSynapse(request):
+    # the following is going to be where the record for the logged in user is grabed
+    # as well as the profile.
     currentUser = loggedInUser(request)
     currentProfile = Profile.objects.get(user = currentUser)
-
+    # the following is the current users Synapse Id required for calling the API
     user_id = currentProfile.synapse_id
-
+    # the following will make a synapse request which will return the users
+    # account informaiton in a json format
     searchedUser = SynapseUser.by_id(client, str(user_id))
+    # the folloiwng will check to make sure there is object returned before returning
+    # it to the method call.
     if searchedUser:
         print(searcheduser)
         return searchedUser
 
+# The following is the first part of the linking your bank account through login
+# to your bank account. This will grab the form and pass it in order to complete
+# the linking bank accounts processing.
 def loginAccountSynapse(request):
+    # the following willl check and make sure that there is a user that is logged in
+    # and grab their profile.
     currentUser = loggedInUser(request)
     currentProfile = Profile.objects.get(user = currentUser)
-
+    # the following is going to grab the form that is submitted and process the form
     if request.method == 'POST':
+        # the followig will grab the form from the POST
         form = LinkAccountSynapse(request.POST)
+        # this will make sure that the form values are valid. If they are valid,
+        # the form will be sent to a processing method that will complete the
+        # processing
         if form.is_valid():
             authorizeLoginSynapse(request, form)
             return redirect('home_page')
+    # if there was no form submitted, the following is where the form will be
+    # rendered with other additional information that is needed.
     else:
         form = LinkAccountSynapse()
         message = "Enter you bank login credentials"
@@ -1208,46 +1232,110 @@ def loginAccountSynapse(request):
         }
         return render(request, 'tabs/link_account_synapse.html', parameters)
 
+# the followig method is going to do the full processing of the linkig bank account
+# form and complete the request action.
 def authorizeLoginSynapse(request, form):
+    # this will grab the currently logged in user and the users profile for later
+    # reference
     currentUser = loggedInUser(request)
     currentProfile = Profile.objects.get(user = currentUser)
-
+    # the following grabs the logged in users synapse id from his profile.
     user_id = currentProfile.synapse_id
-    print(user_id)
+    # the following will send a request to get the users synapse profile from the
+    # api and later user that response object.
     synapseUser = SynapseUser.by_id(client, str(user_id))
     print(synapseUser)
+    # the following section is going to be the informaiton passed from the form that
+    # was submitted, commented out for testing
     # cd = form.cleaned_data
     # bank_code = cd['bank_code']
     # bank_id = cd['bank_id']
     # bank_pw = cd['bank_password']
+    # the following are just testing values in sandbox to make sure the processing
+    # works and is able to send the request and receive the response to process
     bank_id = 'synapse_good'
     bank_pw = 'test1234'
     bank_code = 'fake'
     print(bank_code)
     print(bank_id)
     print(bank_pw)
-
-
-    bank_type = 'ACH-US'
-
+    # the following is the object that is going to be passed with the response
     args = {
         'bank_name':bank_code,
         'username':bank_id,
         'password':bank_pw,
     }
     print(args)
-
+    # the followig is the actual request that will process the request and return
+    # a response that will then be verified
     ach_us = AchUsNode.create_via_bank_login(synapseUser, **args)
-    print(ach_us)
-
+    # the following will check to see if mfa verification is needed for the specified
+    # bank
     verification = ach_us.mfa_verified
     print(verification)
-
+    # If the mfa verification is needed, the following will simply verify the account
+    # and make the account verified.
     if verification == False:
         ach_us.mfa_message
         nodes = ach_us.answer_mfa('test_answer')
         ach_us.mfa_verified
+    print(ach_us)
 
+
+# the following method is going to be where all of the users synapse nodes will be
+# requested and processed
+def listedLinkAccounts(request):
+    # the following grabs the currenly logged in users record and profile within
+    # the application
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+    # the following will grab the users synapse id from the users local profile.
+    user_id = currentProfile.synapse_id
+    print(user_id)
+    # the following will grab the entire synapse profile by sending an api request
+    # with the users synapse profile.
+    synapseUser = SynapseUser.by_id(client, str(user_id))
+    # the following are options for how to display and structure the response for
+    # all of the different nodes linked to the users account
+    options = {
+        'page':1,
+        'per_page':20,
+        'type': 'ACH-US',
+    }
+    # the following is the request and response with all of the users linked nodes
+    # ready to be processed and storage of certain information.
+    nodes = Node.all(synapseUser, **options)
+    for node in nodes:
+        print (node)
+        print (type(node))
+
+    return nodes
+
+def createTransaction(request):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    user_id = currentProfile.synapse_id
+    synapseUser = SynapseUser.by_id(client, str(user_id))
+    print(synapseUser)
+
+    node = Node.by_id(synapseUser, '59d16cd56d7d8a002f763df7')
+    print(node)
+    args = {
+        'to_type': 'ACH-US',
+        'to_id': '59d012da6d7d8a002f756e83',
+        'amount': 32.05,
+        'currency': 'USD',
+        'ip': '127.0.0.1',
+        'process_in': 0, # delay until processing (in days) [optional]
+        'note': 'hi synapse', # a note to synapse [optional]
+        'supp_id': 'ABC123', # optional
+    }
+
+    transaction = Transaction.create(node, **args)
+    print(transaction)
+
+    return transaction
 
 # within the following view method, this will allow the user to create a transfer of money
 # between the user's linked external bank account though Synapse and the synpase sub-account
