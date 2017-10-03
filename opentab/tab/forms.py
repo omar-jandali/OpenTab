@@ -3,7 +3,7 @@
 # that i think need to be created are the following...
 from django import forms
 from django.forms import ModelForm, extras
-from tab.models import Group, Member, Profile, UserBalance
+from tab.models import Group, Member, Profile, UserBalance, User
 from tab.models import GroupBalance, Transfers, Accounts, Expense
 
 from django.contrib.auth.models import User
@@ -27,11 +27,10 @@ class ProfileForm(forms.ModelForm):
         choices=split_choices, widget=forms.RadioSelect, coerce=int
     )
     dob = forms.DateField(widget=forms.widgets.DateInput(attrs={'type':'date'}))
-    ssn = forms.IntegerField(label='Last 4 of SSN')
     class Meta:
         model = Profile
         fields = ['first_name', 'last_name', 'dob', 'street', 'city', 'state',
-                    'zip_code', 'phone', 'ssn', 'privacy']
+                    'zip_code', 'phone', 'privacy']
 
 class CreateGroupForm(forms.ModelForm):
     class Meta:
@@ -42,6 +41,13 @@ class AddMembersForm(forms.ModelForm):
     class Meta:
         model = Member
         fields = ['user']
+
+class UpdateUserSettingsForm(forms.Form):
+    username = forms.CharField(max_length=20, label="Username")
+    email = forms.EmailField(max_length=30, label="Email")
+    current_pw = forms.CharField(max_length=20, label='Current Password')
+    new_pw = forms.CharField(max_length=20, label='New Password')
+    verify_pw = forms.CharField(max_length=20, label='Verify Password')
 
 # the following are for the new type of expense system that is going to be added
 #------------------------------------------------------------------------------

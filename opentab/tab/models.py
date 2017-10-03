@@ -126,6 +126,7 @@ class Profile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # server
     first_name = models.CharField(max_length=25, default='first')
     last_name = models.CharField(max_length=25, default='last')
+    bio = models.CharField(max_length=220, default='bio')
     dob = models.DateField(default='1950-01-01')
     street = models.CharField(max_length=200, default='street address')
     city = models.CharField(max_length=100, default='city')
@@ -179,3 +180,8 @@ class SynapseUsers(models.Model):
     _id = models.IntegerField()
     cip_tag = models.IntegerField()
     link = models.CharField(max_length=200, default='https://uat-api.synapsefi.com/v3.1')
+
+class SynapseAccounts(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    _id = models.CharField(max_length=200, default = '1234567890')
+    cip_tag = models.IntegerField()

@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'^signup$', views.signup, name='signup'),
     url(r'^logout$', views.logoutPage, name='logout'),
     url(r'^setup_profile/$', views.profileSetup, name='profile_setup'),
+    url(r'^settings/$', views.userSettings, name='user_settings'),
     url(r'^clear_all_activities/$', views.clearAllActivities, name='clear_all_activities'),
     url(r'^transfer/$', views.transfers, name='transfer'),
     url(r'^(?P<requested>[\w+]+)/sendRequest/$', views.sendRequest, name="send_request"),

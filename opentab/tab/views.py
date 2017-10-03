@@ -21,7 +21,7 @@ from .forms import CreateGroupForm, AddMembersForm
 from .forms import SignupForm, LoginForm
 from .forms import SignupForm, LoginForm, ProfileForm
 from .forms import IndividualFundingForm, GroupFundingForm, TransferForm, LinkAccountForm
-from .forms import LinkAccountSynapse, ExpenseForm, UpdateExpenseForm
+from .forms import LinkAccountSynapse, ExpenseForm, UpdateExpenseForm, UpdateUserSettingsForm
 
 import dwollav2
 from synapse_pay_rest import Client, Node, Transaction
@@ -150,7 +150,6 @@ def profileSetup(request):
                 state = cd['state']
                 phone = cd['phone']
                 privacy = cd['privacy']
-                ssn = cd['ssn']
                 # this is the new record that is going to be created and saved
                 new_profile = Profile.objects.create(
                     user = currentUser,
@@ -345,6 +344,22 @@ def userHome(request):
             'activity_count':activity_count,
         }
         return render(request, 'tabs/user_home.html', parameters)
+
+def userSettings(request):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+    numberString = str(currentProfile.phone)
+    phone = numberify(request, numberString)
+    form = UpdateUserSettingsForm()
+
+    parameters = {
+        'currentUser':currentUser,
+        'currentProfile':currentProfile,
+        'phone':phone,
+        'form':form,
+    }
+
+    return render(request, 'tabs/user_settings.html', parameters)
 
 # the following method managed the sending of friend requests to other users and
 # storing a record of that in the database.
@@ -795,6 +810,10 @@ def generateReferenceNumber():
     reference = randint(1, 2147483646)
     return(reference)
 
+def numberify(request, number):
+    phone = '-'.join([number[:3], number[3:6], number[6:]])
+    return phone
+
 #--------------------------------------------------------------------------------
 # the following is going to stay last because it is just used to view all records,
 # not part of hte application core
@@ -843,7 +862,7 @@ def accounts(request):
 
 # the following method is going to be used to create a new user account within the
 # Dwolla api system (sandbox/testing)
-def createUserDwolla(request, ssn):
+def createUserDwolla(request):
     currentUser = loggedInUser(request)
     currentProfile = Profile.objects.get(user = currentUser)
     # the following is going to create the object that will store the new users
@@ -859,7 +878,7 @@ def createUserDwolla(request, ssn):
         'state':currentProfile.state,
         'postalCode':currentProfile.zip_code,
         'dateOfBirth':'1970-01-01',
-        'ssn':ssn,
+        # 'ssn':ssn,
     }
     print(request_body)
     # the following lines will send the request to Dwolla and create a user within
