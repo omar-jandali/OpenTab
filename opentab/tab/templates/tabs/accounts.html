@@ -17,6 +17,11 @@
       {{ profile.dob }}, {{ profile.city }}, {{ profile.state }}, {{ profile.phone }},
       {{ profile.balance }}, {{ profile.dwolla_id }}, {{ profile.synapse_id }}, {{ profile.privacy }}</p>
   {% endfor %}
+  <h3>Privacy</h3>
+  {% for privacy in privacies %}
+    <p>{{ privacy.user.username }}, {{ privacy.friends }}, {{ privacy.groups }}, {{ privacy.expenses }},
+      {{ privacy.searchable }}</p>
+  {% endfor %}
   <h3>Transfers</h3>
   {% for transfer in transfers %}
     <p>{{ transfer.user }}, {{ transfer.main }}, {{ transfer.transfer }}, {{ transfer.amount }},

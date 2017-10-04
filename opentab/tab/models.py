@@ -140,6 +140,18 @@ class Profile(models.Model):
     synapse_id = models.CharField(max_length=200, default='123456789')
     created = models.DateTimeField(auto_now_add=True)  # server
 
+# the following values:
+# 1 - everyone
+# 2 - friends
+# 3 - only me
+
+class Privacy(models.Model):
+    user = models.ForeignKey(User, unique=True, on_delete=models.CASCADE)
+    groups = models.SmallIntegerField(default=1)
+    friends = models.SmallIntegerField(default=1)
+    expenses = models.SmallIntegerField(default=1)
+    searchable = models.SmallIntegerField(default=1)
+
 # the following need to be sent with the paypal api to create a new user within
 # the applicaiton. account-type, address, citizenship-code, governament-id, account-web-option,
 # currency-code, dob, email, name, language-code, reg-type, request-envelope

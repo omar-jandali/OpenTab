@@ -3,13 +3,13 @@
 {% block content %}
   <h2>{{ currentUser.username }} -- Balance:{{ profile.balance }}</h2>
   <h3><a href="{% url 'profile_setup' %}">profile</a></h3>
+  <h3><a href="{% url 'user_settings' %}">settings</a></h3>
   <h3><a href="{% url 'accounts' %}">accounts</a></h3>
   <h3><a href="{% url 'transfer' %}">transfer money</a></h3>
   <h3><a href="{% url 'link_account' %}">Link Account</a></h3>
   <h3><a href="{% url 'login_synapse' %}">Link Account (Synapse)</a></h3>
   <h3><a href="{% url 'linked_accounts' %}">Linked Account</a></h3>
   <h3><a href="{% url 'sample_transaction' %}">Sample Transaction</a></h3>
-  <h3><a href="{% url 'user_settings' %}">Settings</a></h3>
 
   <form action="" method="POST">
     {% csrf_token %}
@@ -18,7 +18,9 @@
   </form>
   <h3>{{ message }}</h3>
   {% if searchedUser %}
-    {{ searchedUser }}
+    <a href="{% url 'user_profile' searchedUser.username %}">
+      {{ searchedUser }}
+    </a>
     <a href="{% url 'send_request' searchedUser.username %}">
       send reqest
     </a>
@@ -82,12 +84,20 @@
   <h3>Friends</h3>
   {% if friender %}
     {% for friend in friender %}
-      <p>{{ friend.friend.username }}</p>
+      <p>
+        <a href="{% url 'user_profile' friend.friend.username %}">
+          {{ friend.friend.username }}
+        </a>
+      </p>
     {% endfor %}
   {% endif %}
   {% if friended %}
     {% for friend in friended %}
-      <p>{{ friend.user }}</p>
+      <p>
+        <a href="{% url 'user_profile' friend.user %}">
+          {{ friend.user }}
+        </a>
+      </p>
     {% endfor %}
   {% endif %}
   <h3>Transfers</h3>

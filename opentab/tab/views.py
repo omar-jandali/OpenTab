@@ -14,14 +14,13 @@ from random import randint
 from decimal import Decimal
 from pprint import pprint
 
-from .models import Group, User, Member, Request, Friend, Profile, Expense
+from .models import Group, User, Member, Request, Friend, Profile, Expense, Privacy
 from .models import UserBalance, GroupBalance, Activity, Accounts, Transfers, Dwolla
 
-from .forms import CreateGroupForm, AddMembersForm
-from .forms import SignupForm, LoginForm
-from .forms import SignupForm, LoginForm, ProfileForm
+from .forms import CreateGroupForm, AddMembersForm, UserSettingsTwoForm, UserSettingsForm
+from .forms import SignupForm, LoginForm, ProfileForm, UpdatePasswordForm, UpdateInfoForm
 from .forms import IndividualFundingForm, GroupFundingForm, TransferForm, LinkAccountForm
-from .forms import LinkAccountSynapse, ExpenseForm, UpdateExpenseForm, UpdateUserSettingsForm
+from .forms import LinkAccountSynapse, ExpenseForm, UpdateExpenseForm, UpdatePrivacyForm
 
 import dwollav2
 from synapse_pay_rest import Client, Node, Transaction
@@ -345,20 +344,101 @@ def userHome(request):
         }
         return render(request, 'tabs/user_home.html', parameters)
 
-def userSettings(request):
+def userProfile(request, userName):
     currentUser = loggedInUser(request)
     currentProfile = Profile.objects.get(user = currentUser)
-    numberString = str(currentProfile.phone)
-    phone = numberify(request, numberString)
-    form = UpdateUserSettingsForm()
+
+    users = User.objects.all()
+    for user in users:
+        if user.username == userName:
+            viewedUser = user
+
+    profiles = Profile.objects.all()
+    for profile in profiles:
+        if profile.user.username == userName:
+            viewedProfile = profile
+
+    public = viewedProfile.privacy
+
+    if public == 1:
+        activity = Activity.objects.filter(user = viewedUser).all()
 
     parameters = {
         'currentUser':currentUser,
         'currentProfile':currentProfile,
-        'phone':phone,
-        'form':form,
+        'viewedUser':viewedUser,
+        'viewedProfile':viewedProfile,
+        'activity':activity
     }
 
+    return render(request, 'tabs/user_profile.html', parameters)
+
+def userSettings(request):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+    # commented during initial testing because of dumplcate objects
+    #currentPrivacy = Privacy.objects.get(user = currentUser)
+    currentPrivacy = Privacy.objects.filter(user = currentUser).first()
+
+    if request.method == "POST":
+        if 'userSubmit' in request.POST:
+            updateUserOne = UserSettingsForm(request.POST)
+            if updateUserOne.is_valid():
+                cd = updateUserOne.cleaned_data
+                username = cd['username']
+                email = cd['email']
+            updateUserTwo = UserSettingsTwoForm(request.POST)
+            if updateUserTwo.is_valid():
+                cd = updateUserTwo.cleaned_data
+                first_name = cd['first_name']
+                last_name = cd['last_name']
+                bio = cd['bio']
+                return redirect('home_page')
+        if 'passwordSubmit' in request.POST:
+            updatePassword = updatePasswordForm(request.POST)
+            if updatePassword.is_valid():
+                cd = updatePassword.cleaned_data
+                old_password = cd['old_password']
+                new_password = cd['new_password']
+                verify_password = cd['verify_password']
+                return redirect('home_page')
+        if 'infoSubmit' in request.POST:
+            updateInfo = UpdateInfoFOrm(request.POST)
+            if updateInfo.is_valid():
+                cd = updateInfo.cleaned_data
+                phone = cd['phone']
+                dob = cd['dob']
+                street = cd['street']
+                city = cd['city']
+                state = cd['state']
+                zip_code = cd['zip_code']
+                return redirect('home_page')
+        if 'privacySubmit' in request.POST:
+            updatePrivacy = UpdatePrivacyForm(request.POST)
+            if updatePrivacy.is_valid():
+                cd = updatePrivacy.cleaned_data
+                groups = cd['groups']
+                friends = cd['friends']
+                expenses = cd['expenses']
+                searchable = cd['searchable']
+                return redirect('home_page')
+    else:
+        userSettingOne = UserSettingsForm()
+        userSettingTwo = UserSettingsTwoForm()
+        updatePassword = UpdatePasswordForm()
+        updateInfo = UpdateInfoForm()
+        updatePrivacy = UpdatePrivacyForm()
+
+    parameters = {
+        'currentUser':currentUser,
+        'currentProfile':currentProfile,
+        'currentPrivacy':currentPrivacy,
+        'userSettingOne':userSettingOne,
+        'userSettingTwo':userSettingTwo,
+        'updatePassword':updatePassword,
+        'updateInfo':updateInfo,
+        'updatePrivacy':updatePrivacy,
+    }
     return render(request, 'tabs/user_settings.html', parameters)
 
 # the following method managed the sending of friend requests to other users and
@@ -814,6 +894,21 @@ def numberify(request, number):
     phone = '-'.join([number[:3], number[3:6], number[6:]])
     return phone
 
+def setPrivacy(request):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    if currentProfile.privacy == 1:
+        new_privacy = Privacy.objects.create(
+            user = currentUser,
+            groups = 1,
+            friends = 1,
+            expenses = 1,
+            searchable = 1,
+        )
+
+    return new_privacy
+
 #--------------------------------------------------------------------------------
 # the following is going to stay last because it is just used to view all records,
 # not part of hte application core
@@ -826,6 +921,7 @@ def accounts(request):
     groups = Group.objects.all()
     members = Member.objects.all()
     users = User.objects.all()
+    privacies = Privacy.objects.all()
     requests = Request.objects.all()
     friends = Friend.objects.all()
     profiles = Profile.objects.all()
@@ -851,6 +947,7 @@ def accounts(request):
         'accounts':accounts,
         'transfers':transfers,
         'dwollas':dwollas,
+        'privacies':privacies,
     }
     return render(request, 'tabs/accounts.html', params)
     # return render(request, 'tabs/addMembers.html', params)
