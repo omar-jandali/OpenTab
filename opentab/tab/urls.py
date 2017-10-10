@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'^settings/$', views.userSettings, name='user_settings'),
     url(r'^clear_all_activities/$', views.clearAllActivities, name='clear_all_activities'),
     url(r'^transfer/$', views.transfers, name='transfer'),
+    url(r'^template_testing/$', views.templateTesting, name='template_testing'),
     url(r'^(?P<requested>[\w+]+)/sendRequest/$', views.sendRequest, name="send_request"),
     url(r'^(?P<accepted>[\w+]+)/acceptRequest/$', views.acceptRequest, name="accept_request"),
     url(r'^createGroup/$', views.createGroup, name='create_group'),
@@ -33,6 +34,7 @@ urlpatterns = [
     url(r'^login_synapse/$', views.loginAccountSynapse, name='login_synapse'),
     url(r'^sample_transaction/$', views.createTransaction, name='sample_transaction'),
     url(r'^(?P<userName>[\w+]+)/$', views.userProfile, name='user_profile'),
+    url(r'^(?P<expenseId>[0-9]+)/(?P<activityId>[0-9]+)/verify_expense/$', views.verifyExpense, name='verify_expense'),
     # the following is to just test the sypanse api
     # url(r'^create_user_synapse$', views.createUserSynapse, name='create_user_synapse')
 ]

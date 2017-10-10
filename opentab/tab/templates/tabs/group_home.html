@@ -8,20 +8,22 @@
   {{ message }}
   <h3>Activity</h3>
   {% for activity in activities %}
-    <p>{{ activity.description }}</p>
+    {% if activity.group_ref != 1 %}
+      <p>
+        {{ activity.user.username }} - {{ activity.description }} - {{ activity.category }} - {{ activity.group_ref }}
+      </p>
+    {% endif %}
   {% endfor %}
   <h3>members</h3>
   {% for member in members %}
     <p>
       {{ member.user.username }}
-      {% if member.status == 2 %}
+      {% if member.status != 1 %}
         -- host
-      {% endif %}
-      {% if member.user.username == currentUser.username %}
-        {{ total_amount }}
       {% endif %}
     </p>
   {% endfor %}
+  <a href="">Leave the group</a>
   <h3>Balances</h3>
   {% for balance in balances %}
     <p>{{ balance.user }}, {{ balance.amount }}, {{ balance.memo }}, {{ balance.transfer }}</p>
@@ -33,9 +35,15 @@
       {{ expense.description }} - {{ expense.name }} - {{ expense.split }}
     </p>
   {% endfor %}
-  <p>
-    <a href="{% url 'add_expense' group.group.id %}">
-      New Expense
-    </a>
-  </p>
+  {% for member in members %}
+    {% if member.status != 1 %}
+      {% if member.user.username == currentUser.username %}
+      <p>
+        <a href="{% url 'add_expense' group.group.id %}">
+          New Expense
+        </a>
+      </p>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
 {% endblock %}

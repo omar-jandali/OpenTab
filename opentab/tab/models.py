@@ -109,10 +109,12 @@ class GroupBalance(models.Model):
 class Activity(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE) #server
     group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True) #server
+    expense = models.ForeignKey(Expense, on_delete=models.CASCADE, null=True)
     reference = models.CharField(max_length=100, default='omar')
     description = models.CharField(max_length=200) #server
     status = models.SmallIntegerField(default=1)
     category = models.SmallIntegerField(default=1)
+    group_ref = models.SmallIntegerField(default=1)
     created = models.DateTimeField(auto_now_add=True) #server
 
 class Notification(models.Model):
@@ -146,7 +148,7 @@ class Profile(models.Model):
 # 3 - only me
 
 class Privacy(models.Model):
-    user = models.ForeignKey(User, unique=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     groups = models.SmallIntegerField(default=1)
     friends = models.SmallIntegerField(default=1)
     expenses = models.SmallIntegerField(default=1)

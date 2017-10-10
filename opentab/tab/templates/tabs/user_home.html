@@ -2,7 +2,7 @@
 
 {% block content %}
   <h2>{{ currentUser.username }} -- Balance:{{ profile.balance }}</h2>
-  <h3><a href="{% url 'profile_setup' %}">profile</a></h3>
+  <h3><a href="{% url 'user_profile' currentUser.username %}">profile</a></h3>
   <h3><a href="{% url 'user_settings' %}">settings</a></h3>
   <h3><a href="{% url 'accounts' %}">accounts</a></h3>
   <h3><a href="{% url 'transfer' %}">transfer money</a></h3>
@@ -10,6 +10,8 @@
   <h3><a href="{% url 'login_synapse' %}">Link Account (Synapse)</a></h3>
   <h3><a href="{% url 'linked_accounts' %}">Linked Account</a></h3>
   <h3><a href="{% url 'sample_transaction' %}">Sample Transaction</a></h3>
+
+  <p><a href="{% url 'template_testing' %}"> Template Testing </a></p>
 
   <form action="" method="POST">
     {% csrf_token %}
@@ -32,27 +34,46 @@
   </h3>
   {% for activity in activities %}
     {% if activity.status == 1 %}
-      <strong>
+      {% if activity.group_ref != 2 %}
+        <strong>
+          <p>
+            <a href="{% url 'home_page' %}">
+              {% if activity.group %}
+                <a href="{% url 'group_home' activity.group.id %}">{{ activity.group.name }} -
+              {% endif %}
+              {% if activity.expense %}
+                {{ activity.expense.id }} -
+              {% endif %}
+              {{ activity.description }} - {{ activity.reference }} - {{ activity.category }} - {{ activity.group_ref }} - {{ activity.status }}
+            </a>
+            {% if activity.category == 4 %}
+              <a href="{% url 'verify_expense' activity.expense.id activity.id %}">
+                Y
+              </a>
+            {% endif %}
+          </p>
+        </strong>
+        {% endif %}
+    {% endif %}
+    {% if activity.status == 2 %}
+      {% if activity.group_ref != 2 %}
         <p>
           <a href="{% url 'home_page' %}">
             {% if activity.group %}
               <a href="{% url 'group_home' activity.group.id %}">{{ activity.group.name }} -
             {% endif %}
-            {{ activity.description }} - {{ activity.reference }} - {{ activity.category }}
+            {% if activity.expense %}
+              {{ activity.expense.id }} -
+            {% endif %}
+            {{ activity.description }} - {{ activity.reference }} - {{ activity.category }} - {{ activity.group_ref }} - {{ activity.status }}
           </a>
-        </p>
-
-      </strong>
-    {% endif %}
-    {% if activity.status == 2 %}
-      <p>
-        <a href="{% url 'home_page' %}">
-          {% if activity.group %}
-            <a href="{% url 'group_home' activity.group.id %}">{{ activity.group.name }} -
+          {% if activity.category == 4 %}
+            <a href="{% url 'verify_expense' activity.expense.id activity.id %}">
+              Y
+            </a>
           {% endif %}
-          {{ activity.description }} - {{ activity.reference }} - {{ activity.category }}
-        </a>
-      </p>
+        </p>
+      {% endif %}
     {% endif %}
   {% endfor %}
   <a href="{% url 'clear_all_activities' %}">Mark all as read</a>

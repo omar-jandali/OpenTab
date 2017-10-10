@@ -5,6 +5,9 @@
   <a href="{% url 'home_page' %}">Home</a>
 </h3>
 <h3>Settings page:</h3>
+{% if userMessage %}
+  {{ userMessage }}
+{% endif %}
 <form action="." method="POST">
   {% csrf_token %}
   <h4>User</h4>
@@ -12,18 +15,30 @@
   {{ userSettingTwo.as_p }}
   <input type="submit" name="userSubmit" value="Save">
 </form> <br>
+
+{% if passwordMessage %}
+  {{ passwordMessage }}
+{% endif %}
 <form action="." method="POST">
   {% csrf_token %}
   <h4>Password</h4>
   {{ updatePassword.as_p }}
   <input type="submit" name="passwordSubmit" value="Save">
 </form> <br>
+
+{% if infoMessage %}
+  {{ infoMessage }}
+{% endif %}
 <form action="." method="POST">
   {% csrf_token %}
   <h3>Info</h3>
   {{ updateInfo.as_p }}
   <input type="submit" name="infoSubmit" value="Save">
 </form>
+
+{% if privacyMessage %}
+  {{ privacyMessage }}
+{% endif %}
 <form action="." method="POST">
   {% csrf_token %}
   <h3>Privacy</h3>

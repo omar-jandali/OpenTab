@@ -109,7 +109,7 @@ class UserSettingsTwoForm(forms.ModelForm):
         fields = ['bio', 'first_name', 'last_name']
 
 class UpdatePasswordForm(forms.Form):
-    old_password = forms.CharField(max_length=20, label="Old password", widget=forms.PasswordInput)
+    current_password = forms.CharField(max_length=20, label="Current password", widget=forms.PasswordInput)
     new_password = forms.CharField(max_length=20, label="New password", widget=forms.PasswordInput)
     verify_password = forms.CharField(max_length=20, label="Verify password", widget=forms.PasswordInput)
 

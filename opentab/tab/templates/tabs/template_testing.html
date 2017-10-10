@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="row">
+  <div class="col-1">
+    <a href="{% url 'home_page' %}">
+      <img src="{% static 'images/Yap-Logo-2.png'%}" height="48px" alt="">
+    </a>
+  </div>
+  <div class="col">
+    <form action="" method="POST">
+      {% csrf_token %}
+      <input type="text" name="searched"> <input type="submit" name="submit" value="submit">
+    </form>
+  </div>
+  <div class="col-1">
+    <img src="{% static 'images/placeholder-icon.png'%}" height="48px" alt="">
+  </div>
+  <div class="col-1">
+    <img src="{% static 'images/placeholder-icon.png'%}" height="48px" alt="">
+  </div>
+  <div class="col-1">
+    <img src="{% static 'images/placeholder-icon.png'%}" height="48px" alt="">
+  </div>
+  <div class="col-1">
+    <img src="{% static 'images/placeholder-icon.png'%}" height="48px" alt="">
+  </div>
+  <div class="col-1">
+    <img src="{% static 'images/placeholder-icon.png'%}" height="48px" alt="">
+  </div>
+</div>
+
+  <a href="{% url 'logout' %}">Logout</a>
+{% endblock %}
