@@ -248,14 +248,14 @@ def userHome(request):
     activities = Activity.objects.filter(user = currentUser).all()
     activity_count = Activity.objects.filter(user = currentUser).filter(status=1).count()
 
+    activity_summary = Activity.objects.filter(user = currentUser).order_by('-created').all()[:10]
+
     transfers = Transfers.objects.filter(user = currentUser).all()
 
     profiles = Profile.objects.all()
     for profile in profiles:
         if profile.user == currentUser:
             profile = profile
-
-
 
     # the following will initiate the starting amount as zero so that the
     # calculation is not based on previously stored number
@@ -305,6 +305,7 @@ def userHome(request):
                         'transfers':transfers,
                         'profile':profile,
                         'activity_count':activity_count,
+                        'activity_summary':activity_summary,
                     }
                     return render(request, 'tabs/user_home.html', parameters)
                 else:
@@ -327,6 +328,7 @@ def userHome(request):
                         'trasfers':transfers,
                         'profile':profile,
                         'activity_count':activity_count,
+                        'activity_summary':activity_summary,
                     }
             return render(request, 'tabs/user_home.html', parameters)
     else:
@@ -346,6 +348,7 @@ def userHome(request):
             'transfers':transfers,
             'profile':profile,
             'activity_count':activity_count,
+            'activity_summary':activity_summary,
         }
         return render(request, 'tabs/user_home.html', parameters)
 
@@ -617,6 +620,10 @@ def groupHome(request, groupId):
     # the following is the group object with the id that is passed in the url
     # group = Group.objects.get(name = groupName)
     members = Member.objects.filter(group = group.group).all()
+    for member in members:
+        if member.status == 2:
+            host = member
+            print(host.user.username)
     expenses = Expense.objects.filter(group = group.group).all()
     # the following is going to grab all of the balances for the members of the
     # selected group.
@@ -630,6 +637,7 @@ def groupHome(request, groupId):
         'balances':balances,
         'activities':activities,
         'expenses':expenses,
+        'host':host,
     }
     return render(request, 'tabs/group_home.html', parameters)
 
@@ -743,6 +751,29 @@ def addMembers(request, groupId):
             'currentUser':currentUser,
         }
     return render(request, 'tabs/add_members.html', params)
+
+def selectHostMember(request, groupId, memberName):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+    currentGroup = Group.objects.get(id = groupId)
+    members = Member.objects.filter(group = currentGroup)
+    for member in members:
+        if member.status == 2:
+            host = member
+            print(host.user.username)
+        if member.user.username == memberName:
+            selectedMember = member
+            print(selectedMember.user.username)
+
+    old_host = host
+    old_host.status = 1
+    old_host.save()
+
+    new_host = selectedMember
+    new_host.status = 2
+    new_host.save()
+
+    return redirect('group_home', groupId = currentGroup.id)
 
 def addExpense(request, groupId):
     currentUser = loggedInUser(request)
@@ -934,7 +965,6 @@ def verifyExpense(request, expenseId, activityId):
         category = 4,
         group_ref = 1,
     )
-    print(new_activity.user.username)
 
     new_activity = Activity.objects.create(
         user = host,
@@ -946,7 +976,6 @@ def verifyExpense(request, expenseId, activityId):
         category = 4,
         group_ref = 1,
     )
-    print(new_activity.user.username)
 
     new_activity = Activity.objects.create(
         user = host,
@@ -958,7 +987,6 @@ def verifyExpense(request, expenseId, activityId):
         category = 4,
         group_ref = 2,
     )
-    print(new_activity.user.username)
 
     delete_activity = currentActivity
     delete_activity.delete()

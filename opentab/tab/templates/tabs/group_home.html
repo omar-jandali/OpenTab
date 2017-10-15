@@ -21,6 +21,11 @@
       {% if member.status != 1 %}
         -- host
       {% endif %}
+      {% if member.status == 1 %}
+        {% if host.user.username == currentUser.username %}
+          <a href="{% url 'select_host_member' host.group.id member.user.username %}">set host</a>
+        {% endif %}
+      {% endif %}
     </p>
   {% endfor %}
   <a href="">Leave the group</a>

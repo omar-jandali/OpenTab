@@ -20,10 +20,12 @@ urlpatterns = [
     url(r'^createGroup/$', views.createGroup, name='create_group'),
     # for this url, you will have to enter the group id and then add members to
     # the url. an example would be 127.0.0.1:8000/3/addMembers
-    url(r'^(?P<groupId>[0-9]+)/add_members/$', views.addMembers,
-        name='add_members'),
+    url(r'^(?P<groupId>[0-9]+)/add_members/$', views.addMembers, name='add_members'),
+    url(r'^(?P<groupId>[0-9]+)/(?P<memberName>[\w+]+)/select_host_member/$', views.selectHostMember,
+        name='select_host_member'),
     url(r'^(?P<groupId>[0-9]+)/add_expense/$', views.addExpense, name="add_expense"),
-    url(r'^(?P<groupId>[0-9]+)/(?P<groupName>[\w+]+)/update_expense_even/$', views.updateExpenseEven, name="update_expense_even"),
+    url(r'^(?P<groupId>[0-9]+)/(?P<groupName>[\w+]+)/update_expense_even/$',
+        views.updateExpenseEven, name="update_expense_even"),
     url(r'^(?P<groupId>[0-9]+)/(?P<groupName>[\w+]+)/update_expense_individual/$',
         views.updateExpenseIndividual, name="update_expense_individual"),
     url(r'^group/(?P<groupId>[0-9]+)/$', views.groupHome, name='group_home'),
