@@ -1,3 +1,35 @@
 .backgrounded {
-  background-color: grey !important
+  background-color: white ;
+}
+
+.no-padding {
+  padding-left: 0px;
+  padding-right: 0px;
+}
+
+.border-padding {
+  padding: 8px;
+}
+
+.align-center-item {
+  text-align: center;
+  align-items: center;
+}
+
+.align-center-v {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.solid-borders {
+  border-bottom: 1px solid black;
+}
+
+.header-icon-size {
+  height: 42px !important;
+}
+
+.icon-margins {
+  margin-left: 8px;
+  margin-right: 8px;
 }
