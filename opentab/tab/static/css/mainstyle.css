@@ -2,6 +2,10 @@
   background-color: white ;
 }
 
+.content-backgroun {
+  background-color: white;
+}
+
 .no-padding {
   padding-left: 0px;
   padding-right: 0px;
@@ -32,4 +36,20 @@
 .icon-margins {
   margin-left: 8px;
   margin-right: 8px;
+}
+
+.full-height {
+  height: 100vh;
+}
+
+.small-margin-left {
+  margin-left: 50px;
+}
+
+.fixed-position {
+  position: fixed;
+}
+
+.page-header {
+  margin-top: 10px;
 }

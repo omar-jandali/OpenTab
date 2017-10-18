@@ -160,6 +160,14 @@ def profileSetup(request):
                     phone = phone,
                     privacy = privacy,
                 )
+                # description = 'Congratulation' + currentUse.username + ' on setting up your Yap account'
+                # profile_setup_act = Acitivty.objects.create(
+                #     user = currentUser,
+                #     description = description,
+                #     status = 1,
+                #     category = 1,
+                #     group_ref = 1,
+                # )
                 # createUserDwolla(request, ssn)
                 # searchUserDwolla(request)
                 createUserSynapse(request)
@@ -245,7 +253,7 @@ def userHome(request):
     totals = UserBalance.objects.filter(user = currentUser).all()
     # the following is going to pull the list of all the activty related to
     # the logged in user
-    activities = Activity.objects.filter(user = currentUser).all()
+    activities = Activity.objects.filter(user = currentUser).order_by('-created').all()
     activity_count = Activity.objects.filter(user = currentUser).filter(status=1).count()
 
     activity_summary = Activity.objects.filter(user = currentUser).order_by('-created').all()[:10]
@@ -351,6 +359,37 @@ def userHome(request):
             'activity_summary':activity_summary,
         }
         return render(request, 'tabs/user_home.html', parameters)
+
+def userGroups(request):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+    members = Member.objects.filter(user = currentUser).all()
+    activity_count = Activity.objects.filter(user = currentUser).filter(status=1).count()
+    if request.method == "POST":
+        cheese = 'hello'
+    else:
+        parameters = {
+            'currentUser':currentUser,
+            'members':members,
+            'activity_count':activity_count,
+        }
+        return render(request, 'tabs/groups.html', parameters)
+
+def userActivity(request):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+    activities = Activity.objects.filter(user = currentUser).order_by('-created').all()
+    activity_count = Activity.objects.filter(user = currentUser).filter(status=1).count()
+    if request.method == "POST":
+        cheese = 'hello'
+    else:
+        parameters = {
+            'currentUser':currentUser,
+            'activities':activities,
+            'activity_count':activity_count,
+        }
+        return render(request, 'tabs/activity.html', parameters)
+
 
 def userProfile(request, userName):
     currentUser = loggedInUser(request)
@@ -499,26 +538,7 @@ def sendRequest(request, requested):
         user = currentUser,
         requested = requestedUser,
     )
-    # the following will add a record to the activity to notify bother users
-    # of the Activity
-    sendingDescription = 'Friend request to ' + requested + ' has been sent'
-    receivingDescription = currentUser.username + ' has sent you a friend request'
-    # the first of the two objects that is goint to be stored is what the sender
-    # is going to see.
-    # sender_activity = Activity.objects.create(
-    #     user = currentUser,
-    #     description = sendingDescription,
-    #     status = 1,
-    #     category = 1,
-    # )
-    # the second activity objects is going to be displayed to the person
-    # who is receiving the friend request
-    receiving_activity = Activity.objects.create(
-        user = requestedUser,
-        description = receivingDescription,
-        status = 1,
-        category = 1,
-    )
+
     return redirect('home_page')
 
 # The following method will process the acceptaance of a friend request.
@@ -533,23 +553,7 @@ def acceptRequest(request, accepted):
         category = 1,
         status = 1,
     )
-    # the following two objects are going to be what stores the acceptance of
-    # friend request in teh activty table for both sides
-    accepterDescription = currentUser.username + ' has accepted your friend request'
-    acceptedDescription = 'You and ' + accepted + ' are now friends'
-    accepted_activity = Activity.objects.create(
-        user = currentUser,
-        description = acceptedDescription,
-        status = 1,
-        category = 1,
-    )
-    accepter_activity = Activity.objects.create(
-        user = acceptedUser,
-        description = accepterDescription,
-        reference = accepted,
-        status = 1,
-        category = 1,
-    )
+
     # after the new friend record is created, the original request is found
     # and deleted so that they request does not keep showing up on the logged in
     # users home page.
@@ -587,9 +591,7 @@ def createGroup(request):
                 reference_code = referenceCode,
                 created_by = currentUser,
             )
-            #---------------------------------------------------------
-            # create a column that addes the person who created the group
-            #---------------------------------------------------------
+
             # return redirect('home_page')
             return redirect('add_members', groupId=new_group.id)
             #return redirect('accounts')
@@ -666,19 +668,7 @@ def addMembers(request, groupId):
             group = group,
             status = 2,
         )
-        host_description = 'You created the group - ' + group.name
-        friend_description = currentUser.username + ' added you to ' + group.name
-        # the following is going to add a new activity record when the first member of
-        # the group is created
-        print('adding default new user with group reference')
-        default_member_activty = Activity.objects.create(
-            user = currentUser,
-            group = group,
-            description = host_description,
-            status = 1,
-            category = 2,
-            group_ref = 1,
-        )
+
         print(default_member_activty.group.name)
         # the following will scroll through every user in the users table
         for friend in friends:
@@ -695,19 +685,7 @@ def addMembers(request, groupId):
                         group = group,
                         status = 1,
                     )
-                    print('added')
-                    # the following is going to be where each of the members added `to
-                    # the group is saved and stored in the activities table
-                    # description = selected_user.username + ' has been added to ' + group.name`
-                    new_activity_member = Activity.objects.create(
-                        user = selected_user,
-                        group = group,
-                        description = friend_description,
-                        status = 1,
-                        category = 2,
-                        group_ref = 3,
-                    )
-                    print('activity added')
+
             if friend.friend.username == currentUser.username:
                 selected_user = User.objects.get(username = friend.user)
                 print(selected_user)
@@ -718,19 +696,7 @@ def addMembers(request, groupId):
                         group = group,
                         status = 1,
                     )
-                    print('added')
-                    # the following is going to be where each of the members added to
-                    # the group is saved and stored in the activities table
-                    # description = selected_user.username + ' has been added to ' + group.name
-                    new_activity_member = Activity.objects.create(
-                        user = selected_user,
-                        group = group,
-                        description = friend_description,
-                        status = 1,
-                        category = 2,
-                        group_ref = 3,
-                    )
-                    print('activity added')
+
                 # next three lines will keep track and updated the group count every time that
                 # a new user is added to the specific group that is selected.
                 updated_group = group
@@ -833,29 +799,7 @@ def updateExpenseEven(request, groupId, groupName):
                 update_expense.description = description
                 update_expense.save()
 
-                if expense.user != host.user:
-                    user_description = 'You owe ' + host.user.username + ' $' + str(userAmount) + ' for ' + description
-                    host_description = expense.user.username + ' owes ' + host.user.username + ' $' + str(userAmount) + ' for ' + description
-                    user_activity = Activity.objects.create(
-                        user = expense.user,
-                        group = currentGroup,
-                        expense = expense,
-                        reference = host.user.username,
-                        description = user_description,
-                        status = 1,
-                        category = 4,
-                        group_ref = 1,
-                    )
-                    host_activity = Activity.objects.create(
-                        user = host.user,
-                        group = currentGroup,
-                        expense = expense,
-                        reference = host.user.username,
-                        description = host_description,
-                        status = 2,
-                        category = 4,
-                        group_ref = 2,
-                    )
+                # if expense.user != host.user:
             return redirect('group_home', groupId = currentGroup.id)
     else:
         message = 'Please complete form below'
@@ -899,29 +843,8 @@ def updateExpenseIndividual(request, groupId, groupName):
                 update_expense.amount = total_amount
                 update_expense.description = description
                 update_expense.save()
-                if expense.user != host.user:
-                    user_description = 'You owe ' + host.user.username + ' $' + str(total_amount) + ' for ' + description
-                    host_description = expense.user.username + ' owes you $' + str(total_amount) + ' for ' + description
-                    user_activity = Activity.objects.create(
-                        user = expense.user,
-                        group = currentGroup,
-                        expense = expense,
-                        reference = host.user.username,
-                        description = user_description,
-                        status = 1,
-                        category = 4,
-                        group_ref = 1,
-                    )
-                    host_activity = Activity.objects.create(
-                        user = host.user,
-                        group = currentGroup,
-                        expense = expense,
-                        reference = host.user.username,
-                        description = host_description,
-                        status = 2,
-                        category = 4,
-                        group_ref = 2,
-                    )
+                # if expense.user != host.user:
+
                 count = count + 1
             return redirect('group_home', groupId = currentGroup.id)
     else:
@@ -950,43 +873,6 @@ def verifyExpense(request, expenseId, activityId):
     update_expense = expense
     update_expense.status = 2
     update_expense.save()
-
-    userDescription = 'You transfered $' + str(expense.amount) + ' to ' + host.username
-    hostDescription = expense.user.username + ' transfered $' + str(expense.amount) + ' to you'
-    groupDescription = expense.user.username + ' transfered $' + str(expense.amount) + ' to ' + host.username
-
-    new_activity = Activity.objects.create(
-        user = expense.user,
-        group = expense.group,
-        expense = expense,
-        reference = host.username,
-        description = userDescription,
-        status = 1,
-        category = 4,
-        group_ref = 1,
-    )
-
-    new_activity = Activity.objects.create(
-        user = host,
-        group = expense.group,
-        expense = expense,
-        reference = host.username,
-        description = hostDescription,
-        status = 1,
-        category = 4,
-        group_ref = 1,
-    )
-
-    new_activity = Activity.objects.create(
-        user = host,
-        group = expense.group,
-        expense = expense,
-        reference = host.username,
-        description = groupDescription,
-        status = 1,
-        category = 4,
-        group_ref = 2,
-    )
 
     delete_activity = currentActivity
     delete_activity.delete()

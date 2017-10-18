@@ -1,38 +1,21 @@
-{% extends "base.html" %}
+{% extends "header.html" %}
 
 {% block content %}
-<h3>
-  <a href="{% url 'home_page' %}">Home</a>
-</h3>
-  <h2>{{ group.group.name }}</h2>
-  {{ message }}
-  <h3>Activity</h3>
-  {% for activity in activities %}
-    {% if activity.group_ref != 1 %}
-      <p>
-        {{ activity.user.username }} - {{ activity.description }} - {{ activity.category }} - {{ activity.group_ref }}
-      </p>
-    {% endif %}
-  {% endfor %}
-  <h3>members</h3>
-  {% for member in members %}
-    <p>
-      {{ member.user.username }}
-      {% if member.status != 1 %}
-        -- host
+  <h2 class="page-header">{{ group.group.name }}</h2>
+  <div>
+    {% for member in members %}
+      <p>{{ member.user.username }}</p>
+    {% endfor %}
+  </div>
+  <div>
+    {% for activity in activities %}
+      {% if activity.group_ref == 1 %}
+        <p>
+          {{ activity.description }}
+        </p>
       {% endif %}
-      {% if member.status == 1 %}
-        {% if host.user.username == currentUser.username %}
-          <a href="{% url 'select_host_member' host.group.id member.user.username %}">set host</a>
-        {% endif %}
-      {% endif %}
-    </p>
-  {% endfor %}
-  <a href="">Leave the group</a>
-  <h3>Balances</h3>
-  {% for balance in balances %}
-    <p>{{ balance.user }}, {{ balance.amount }}, {{ balance.memo }}, {{ balance.transfer }}</p>
-  {% endfor %}
+    {% endfor %}
+  </div>
   <h3>Expenses</h3>
   {% for expense in expenses %}
     <p>

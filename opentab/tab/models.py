@@ -6,68 +6,25 @@ from django.contrib.auth.models import User
 # field in the model
 from django_localflavor_us.models import USStateField
 
-FRIEND_CATEGORY_CHOICES = (
-    ('1', 'default'),
-    ('2', 'friend'),
-    ('3', 'family'),
-    ('4', 'favorite'),
-)
-
-FRIEND_STATUS_CHOICES = (
-    ('1', 'default'),
-    ('2', 'blocked'),
-)
-
-GROUP_STATUS_CHOICES = (
-    ('1', 'active'),
-    ('2', 'didabled'),
-    ('3', 'suspended'),
-)
-
-MEMBER_STATUS_CHOICES = (
-    ('1', 'member'),
-    ('2', 'host'),
-)
-
-RECORD_STATUS_CHOICES = (
-    ('1', 'unverified'),
-    ('2', 'verified'),
-)
-
-NOTIFICATION_CATEGORY_CHOICES = (
-    ('1', 'group'),
-    ('2', 'record'),
-    ('3', 'request'),
-    ('4', 'friend'),
-)
-
-NOTIFICATION_STATUS_CHOICES = {
-    ('1', 'unread'),
-    ('2', 'read'),
-}
-
-PROFILE_PRIVACY_CHOICES = {
-    ('1', 'public'),
-    ('2', 'private'),
-}
-
 class Request(models.Model):
     user = models.CharField(max_length=22, default='current user')
     requested = models.ForeignKey(User, default=1, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
 
+# category
+#   friend, family, favorite
+
 class Friend(models.Model):
     user = models.CharField(max_length=22, default='current user')
     friend = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
-    category = models.SmallIntegerField(choices=FRIEND_CATEGORY_CHOICES, default=1)
-    status = models.SmallIntegerField(choices=FRIEND_STATUS_CHOICES, default=1)
+    category = models.SmallIntegerField(default=1)
     created = models.DateTimeField(auto_now_add=True)
 
 class Group(models.Model):
     name = models.CharField(max_length = 25)
     description = models.CharField(max_length = 250, null=True)
     count = models.SmallIntegerField(default=1)
-    status = models.SmallIntegerField(choices=GROUP_STATUS_CHOICES, default=1)
+    status = models.SmallIntegerField(default=1)
     reference_code = models.IntegerField(default=0)
     created_by = models.ForeignKey(User, default=1, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
@@ -75,7 +32,7 @@ class Group(models.Model):
 class Member(models.Model):
     user = models.ForeignKey(User, default=1, on_delete=models.CASCADE) #user
     group = models.ForeignKey(Group, default=1 , on_delete=models.CASCADE) #user
-    status = models.SmallIntegerField(choices=MEMBER_STATUS_CHOICES, default=1) #user
+    status = models.SmallIntegerField(default=1) #user
     funding = models.DecimalField(decimal_places=2, max_digits=9, default=0.00)
     created = models.DateTimeField(auto_now_add=True) #server
 
@@ -86,6 +43,7 @@ class Expense(models.Model):
     amount = models.DecimalField(decimal_places=2, max_digits=9, default=0)
     description = models.CharField(max_length=200, default = 'expense')
     name = models.CharField(max_length=100, default = 'group name')
+    location = models.CharField(max_length=100, default = 'location')
     status = models.SmallIntegerField(default = 1)
     split = models.SmallIntegerField(default = 1)
     created = models.DateTimeField(auto_now_add=True)
@@ -106,23 +64,26 @@ class GroupBalance(models.Model):
     transfer = models.SmallIntegerField(default=1)
     created = models.DateTimeField(auto_now_add=True)
 
+# status
+# 1-unseen
+# 2-seen
+#category
+# 1-profile
+# 2-group
+# 3-expense
+# 4-accounts
+# group_ref
+# 1-default
+
 class Activity(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE) #server
     group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True) #server
     expense = models.ForeignKey(Expense, on_delete=models.CASCADE, null=True)
     reference = models.CharField(max_length=100, default='omar')
     description = models.CharField(max_length=200) #server
-    status = models.SmallIntegerField(default=1)
     category = models.SmallIntegerField(default=1)
-    group_ref = models.SmallIntegerField(default=1)
+    status = models.SmallIntegerField(default=1)
     created = models.DateTimeField(auto_now_add=True) #server
-
-class Notification(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)  # server
-    description = models.CharField(max_length=200)  # server
-    status = models.SmallIntegerField(default=1)  # server
-    category = models.SmallIntegerField(default=1)  # server
-    created = models.DateTimeField(auto_now_add=True)  # server
 
 class Profile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # server

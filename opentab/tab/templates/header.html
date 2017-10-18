@@ -4,8 +4,8 @@
 {% block standard %}
 <div class="row">
   <div class=" border-padding solid-borders">
-    <a href="{% url 'home_page' %}">
-      <img src="{% static 'images/Yap-Logo-5.png'%}" class="header-icon-size" alt="">
+    <a href="">
+      <img src="{% static 'images/Yap-Logo-6.png'%}" class="header-icon-size" alt="">
     </a>
   </div>
   <div class="col-3">
@@ -13,35 +13,36 @@
   <div class="col align-center-item align-center-v solid-borders">
     <form action="" method="POST">
       {% csrf_token %}
-      <input type="text" name="searched">
+      <input type="text" name="searched" placeholder="Search">
     </form>
   </div>
   <div class="col align-center-item border-padding solid-borders">
-    <a href="">
-      <img src="{% static 'images/placeholder-icon.png'%}" class="header-icon-size icon-margins" alt="">
+    <a href="{% url 'user_groups' %}">
+      <img src="{% static 'images/groups.png'%}" class="header-icon-size icon-margins" alt="">
     </a>
     <a href="">
-      <img src="{% static 'images/placeholder-icon.png'%}" class="header-icon-size icon-margins" alt="">
+      <img src="{% static 'images/transaction.png'%}" class="header-icon-size icon-margins" alt="">
     </a>
     <a href="">
-      <img src="{% static 'images/placeholder-icon.png'%}" class="header-icon-size icon-margins" alt="">
+      <img src="{% static 'images/accounts.png'%}" class="header-icon-size icon-margins" alt="">
     </a>
-    <a href="">
-      <img src="{% static 'images/placeholder-icon.png'%}" class="header-icon-size icon-margins" alt="">
-    </a>
-
   </div>
   <div class="col-3">
   </div>
   <div class="border-padding solid-borders">
-    <a href="">
-      <img src="{% static 'images/placeholder-icon.png'%}" class="header-icon-size" alt="">
+    <a href="{% url 'user_activity' %}">
+      <img src="{% static 'images/user.png'%}" class="header-icon-size" alt="">
     </a>
   </div>
 </div>
-
-  {% block content %}
-  {% endblock %}
-
-  <a href="{% url 'logout' %}">Logout</a>
+<div class="row">
+  <div class="col-4 content-backgroun full-height">
+  </div>
+  <div class="col">
+    {% block content %}
+    {% endblock %}
+  </div>
+  <div class="col-4 content-backgroun full-height">
+  </div>
+</div>
 {% endblock %}
