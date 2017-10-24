@@ -3,8 +3,8 @@
 # that i think need to be created are the following...
 from django import forms
 from django.forms import ModelForm, extras
-from tab.models import Group, Member, Profile, UserBalance, User, Privacy
-from tab.models import GroupBalance, Transfers, Accounts, Expense
+from tab.models import Group, Member, Profile, User, Privacy
+from tab.models import Transfers, Accounts, Expense
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -149,34 +149,20 @@ class ExpenseForm(forms.ModelForm):
     )
     class Meta:
         model = Expense
-        fields = ['name', 'split']
+        fields = ['name', 'location', 'split']
 
-class UpdateExpenseForm(forms.ModelForm):
+class UpdateExpenseEvenForm(forms.ModelForm):
+    class Meta:
+        model = Expense
+        fields = ['amount']
+
+
+class UpdateExpenseIndividualForm(forms.ModelForm):
     class Meta:
         model = Expense
         fields = ['amount', 'description']
 
 #------------------------------------------------------------------------------
-
-class IndividualFundingForm(forms.ModelForm):
-    transfer_choices = (('1', 'opentab-to-Payapal'),
-                        ('2', 'PayPal-to-Opentab'))
-    transfer = forms.TypedChoiceField(
-        choices=transfer_choices, widget=forms.RadioSelect, coerce=int
-    )
-    class Meta:
-        model = UserBalance
-        fields = ['amount', 'memo', 'transfer']
-
-class GroupFundingForm(forms.ModelForm):
-    transfer_choices = (('1', 'group-to-individual'),
-                        ('2', 'individual-to-group'))
-    transfer = forms.TypedChoiceField(
-        choices=transfer_choices, widget=forms.RadioSelect, coerce=int
-    )
-    class Meta:
-        model = GroupBalance
-        fields = ['amount', 'memo', 'transfer']
 
 class TransferForm(forms.ModelForm):
     acct_choices = (('Tabz', 'Tabz - Username'),

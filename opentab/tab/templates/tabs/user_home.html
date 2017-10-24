@@ -1,79 +1,25 @@
 {% extends "header.html" %}
 
 {% block content %}
-  <h2 class="backgrounded">{{ currentUser.username }}</h2>
-  <h3><a href="{% url 'user_profile' currentUser.username %}">profile</a></h3>
-  <h3><a href="{% url 'user_settings' %}">settings</a></h3>
-  <h3><a href="{% url 'accounts' %}">accounts</a></h3>
-  <h3><a href="{% url 'transfer' %}">transfer money</a></h3>
-  <h3><a href="{% url 'login_synapse' %}">Link Account (Synapse)</a></h3>
-  <h3><a href="{% url 'linked_accounts' %}">Linked Account</a></h3>
-  <h3><a href="{% url 'sample_transaction' %}">Sample Transaction</a></h3>
-
-  <p><a href="{% url 'template_testing' %}"> Template Testing </a></p>
-  <h3>{{ message }}</h3>
-  {% if searchedUser %}
-    <a href="{% url 'user_profile' searchedUser.username %}">
-      {{ searchedUser }}
-    </a>
-    <a href="{% url 'send_request' searchedUser.username %}">
-      send reqest
-    </a>
-  {% endif %}
-  <h3>Activity
-    {% if activity_count > 0 %}
-      - {{ activity_count }}
+  <h2 class="">{{ currentUser.username }}</h2>
+  <h3>
+    Activity
+    {% if unseen_activity > 0 %}
+      - ({{ unseen_activity }})
     {% endif %}
   </h3>
-  {% for activity in activity_summary %}
+  {% for activity in activities %}
     {% if activity.status == 1 %}
-      {% if activity.group_ref != 2 %}
-        <strong>
-          <p>
-            <a href="{% url 'user_profile' %}">
-              {% if activity.group %}
-                <a href="{% url 'group_home' activity.group.id %}">{{ activity.group.name }} -
-              {% endif %}
-              {% if activity.expense %}
-                {{ activity.expense.id }} -
-              {% endif %}
-              {{ activity.description }} - {{ activity.reference }} - {{ activity.category }} - {{ activity.group_ref }} - {{ activity.status }}
-            </a>
-            {% if activity.category == 4 %}
-              <a href="{% url 'verify_expense' activity.expense.id activity.id %}">
-                Y
-              </a>
-            {% endif %}
-          </p>
-        </strong>
-        {% endif %}
+      <strong>
+        <p>{{activity.description}}</p>
+      </strong>
     {% endif %}
     {% if activity.status == 2 %}
-      {% if activity.group_ref != 2 %}
-        <p>
-          <a href="{% url 'home_page' %}">
-            {% if activity.group %}
-              <a href="{% url 'group_home' activity.group.id %}">{{ activity.group.name }} -
-            {% endif %}
-            {% if activity.expense %}
-              {{ activity.expense.id }} -
-            {% endif %}
-            {{ activity.description }} - {{ activity.reference }} - {{ activity.category }} - {{ activity.group_ref }} - {{ activity.status }}
-          </a>
-          {% if activity.category == 4 %}
-            <a href="{% url 'verify_expense' activity.expense.id activity.id %}">
-              Y
-            </a>
-          {% endif %}
-        </p>
-      {% endif %}
+      <p>{{activity.description}}</p>
     {% endif %}
   {% endfor %}
   <p>
     <a href="{% url 'clear_all_activities' %}">Mark all as read</a>
-  </p>
-  <p>
-    <a href=""> View all activity </a>
   </p>
 
   <!--The following is the start of the requests part of the html file-->
@@ -102,44 +48,13 @@
     {% endfor %}
   {% endif %}
   <h3>Friends</h3>
-  {% if friender %}
-    {% for friend in friender %}
-      <p>
-        <a href="{% url 'user_profile' friend.friend.username %}">
-          {{ friend.friend.username }}
-        </a>
-      </p>
-    {% endfor %}
-  {% endif %}
-  {% if friended %}
-    {% for friend in friended %}
-      <p>
-        <a href="{% url 'user_profile' friend.user %}">
-          {{ friend.user }}
-        </a>
-      </p>
-    {% endfor %}
-  {% endif %}
-  <h3>Transfers</h3>
-  {% for transfer in transfers %}
-    <p>{{ transfer.main }}, {{ transfer.transfer }}, {{ transfer.amount }},
-      {{ transfer.memo }}
-    </p>
+  {% for friend in friends %}
+    {% if friend.user == currentUser.username %}
+      <p>{{ friend.friend.username }}</p>
+    {% endif %}
+    {% if friend.friend.username == currentUser.username %}
+      <p>{{ friend.user }}</p>
+    {% endif %}
   {% endfor %}
-  <h3>Groups</h3>
-  <ul>
-    {% for member in members %}
-      <li>
-        <a href="{% url 'group_home' member.group.id %}">
-          {{ member.group.id }} -- {{ member.group.name }}
-        </a>
-      </li>
-    {% endfor %}
-    <li>
-      <a href="{% url 'create_group' %}">
-        new group
-      </a>
-    </li>
-  </ul>
   <a href="{% url 'logout' %}">Logout</a>
 {% endblock %}

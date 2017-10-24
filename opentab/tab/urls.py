@@ -6,14 +6,16 @@ from . import views
 # OF THE STUFF I DID (GROUPS, MEMBERS, RECORDS, TRANSACTIONS, USERS). YOU WILL
 # USE THEN WHEN PASSING IN LINKS.
 urlpatterns = [
-    url(r'^$', views.userHome, name='home_page'),
+    url(r'^$', views.userGroups, name='home_page'),
     url(r'^login$', views.loginPage, name='login'),
     url(r'^signup$', views.signup, name='signup'),
     url(r'^logout$', views.logoutPage, name='logout'),
     url(r'^setup_profile/$', views.profileSetup, name='profile_setup'),
     url(r'^settings/$', views.userSettings, name='user_settings'),
     url(r'^groups/$', views.userGroups, name='user_groups'),
-    url(r'^activity/$', views.userActivity, name='user_activity'),
+    url(r'^profile/$', views.userHome, name='user_home'),
+    url(r'^searched/$', views.searchedUser, name='user_search'),
+    url(r'^accounts/$', views.userAccounts, name='user_accounts'),
     url(r'^clear_all_activities/$', views.clearAllActivities, name='clear_all_activities'),
     url(r'^transfer/$', views.transfers, name='transfer'),
     url(r'^template_testing/$', views.templateTesting, name='template_testing'),
@@ -37,8 +39,8 @@ urlpatterns = [
     url(r'^default_source/(?P<source_id>[0-9]+)/$', views.setDefaultSource, name='default_source'),
     url(r'^login_synapse/$', views.loginAccountSynapse, name='login_synapse'),
     url(r'^sample_transaction/$', views.createTransaction, name='sample_transaction'),
-    url(r'^(?P<userName>[\w+]+)/$', views.userProfile, name='user_profile'),
     url(r'^(?P<expenseId>[0-9]+)/(?P<activityId>[0-9]+)/verify_expense/$', views.verifyExpense, name='verify_expense'),
+    url(r'^(?P<userName>[\w+]+)/$', views.userProfile, name='user_profile'),
     # the following is to just test the sypanse api
     # url(r'^create_user_synapse$', views.createUserSynapse, name='create_user_synapse')
 ]

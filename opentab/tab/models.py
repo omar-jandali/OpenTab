@@ -11,9 +11,6 @@ class Request(models.Model):
     requested = models.ForeignKey(User, default=1, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
 
-# category
-#   friend, family, favorite
-
 class Friend(models.Model):
     user = models.CharField(max_length=22, default='current user')
     friend = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
@@ -36,7 +33,6 @@ class Member(models.Model):
     funding = models.DecimalField(decimal_places=2, max_digits=9, default=0.00)
     created = models.DateTimeField(auto_now_add=True) #server
 
-#---------
 class Expense(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     group = models.ForeignKey(Group, on_delete=models.CASCADE)
@@ -47,43 +43,6 @@ class Expense(models.Model):
     status = models.SmallIntegerField(default = 1)
     split = models.SmallIntegerField(default = 1)
     created = models.DateTimeField(auto_now_add=True)
-#----------
-
-class UserBalance(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    amount = models.DecimalField(decimal_places=2, max_digits=9, default=0)
-    memo = models.CharField(max_length=200, default='money transfer')
-    transfer = models.SmallIntegerField(default=1)
-    created = models.DateTimeField(auto_now_add=True)
-
-class GroupBalance(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
-    amount = models.DecimalField(decimal_places=2, max_digits=9, default=0)
-    memo = models.CharField(max_length=200, default='group transfer')
-    transfer = models.SmallIntegerField(default=1)
-    created = models.DateTimeField(auto_now_add=True)
-
-# status
-# 1-unseen
-# 2-seen
-#category
-# 1-profile
-# 2-group
-# 3-expense
-# 4-accounts
-# group_ref
-# 1-default
-
-class Activity(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE) #server
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True) #server
-    expense = models.ForeignKey(Expense, on_delete=models.CASCADE, null=True)
-    reference = models.CharField(max_length=100, default='omar')
-    description = models.CharField(max_length=200) #server
-    category = models.SmallIntegerField(default=1)
-    status = models.SmallIntegerField(default=1)
-    created = models.DateTimeField(auto_now_add=True) #server
 
 class Profile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)  # server
@@ -102,6 +61,25 @@ class Profile(models.Model):
     dwolla_id = models.CharField(max_length=200, default='https://api-sandbox.dwolla.com')
     synapse_id = models.CharField(max_length=200, default='123456789')
     created = models.DateTimeField(auto_now_add=True)  # server
+
+class UserActivity(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    account = models.CharField(max_length=150, null=True)
+    description = models.CharField(max_length=200, default='some action')
+    # 1 = unseen 2 = seen
+    status = models.SmallIntegerField(default=1)
+    created = models.DateTimeField(auto_now_add=True)
+
+class GroupActivity(models.Model):
+    user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    expense = models.ForeignKey(Expense, null=True, on_delete=models.CASCADE)
+    description = models.CharField(max_length=200, default='some action')
+    # the following will allow the group to know if it is a general group activity
+    # or if there is a user specificied
+    general = models.SmallIntegerField(default = 1)
+    created = models.DateTimeField(auto_now_add=True)
+
 
 # the following values:
 # 1 - everyone

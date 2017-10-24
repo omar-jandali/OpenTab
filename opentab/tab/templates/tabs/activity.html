@@ -1,7 +1,9 @@
 {% extends "header.html" %}
 
 {% block content %}
-  <h1 class="page-header align-center-item">Activity</h1>
+  <h1 class="page-header align-center-item">
+    Activity ({{unseen_activity}})
+  </h1>
   <div class="">
     {% for activity in activities %}
       <p>{{ activity.description }}</p>

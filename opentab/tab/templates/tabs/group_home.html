@@ -4,34 +4,35 @@
   <h2 class="page-header">{{ group.group.name }}</h2>
   <div>
     {% for member in members %}
-      <p>{{ member.user.username }}</p>
+      <p>
+        {{ member.user.username }}
+        {% if member.status == 2 %}
+          (host)
+        {% endif %}
+        {% if currentUser == host.user %}
+          {% if member.status == 1 %}
+            <a href="{% url 'select_host_member' member.group.id member.user.username %}">Set as host</a>
+          {% endif %}
+        {% endif %}
+      </p>
     {% endfor %}
   </div>
   <div>
     {% for activity in activities %}
-      {% if activity.group_ref == 1 %}
-        <p>
-          {{ activity.description }}
-        </p>
+      {% if activity.user == currentUser %}
+        {% if activity.general == 2 %}
+          <p>{{ activity.description }}</p>
+        {% endif %}
+      {% endif %}
+      {% if activity.user != currentUser %}
+        {% if activity.general == 1 %}
+          <p>{{ activity.description }}</p>
+        {% endif %}
       {% endif %}
     {% endfor %}
   </div>
-  <h3>Expenses</h3>
-  {% for expense in expenses %}
-    <p>
-      {{ expense.user.username }} - {{ expense.group.name }} - {{ expense.amount }} -
-      {{ expense.description }} - {{ expense.name }} - {{ expense.split }}
-    </p>
-  {% endfor %}
-  {% for member in members %}
-    {% if member.status != 1 %}
-      {% if member.user.username == currentUser.username %}
-      <p>
-        <a href="{% url 'add_expense' group.group.id %}">
-          New Expense
-        </a>
-      </p>
-      {% endif %}
-    {% endif %}
-  {% endfor %}
+  {% if currentUser == host.user %}
+    <a href="{% url 'add_expense' host.group.id %}">Add New Expense</a>
+  {% endif %}
+
 {% endblock %}

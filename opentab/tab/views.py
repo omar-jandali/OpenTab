@@ -15,12 +15,12 @@ from decimal import Decimal
 from pprint import pprint
 
 from .models import Group, User, Member, Request, Friend, Profile, Expense, Privacy
-from .models import UserBalance, GroupBalance, Activity, Accounts, Transfers, Dwolla
+from .models import Accounts, Transfers, Dwolla, UserActivity, GroupActivity
 
 from .forms import CreateGroupForm, AddMembersForm, UserSettingsTwoForm, UserSettingsForm
 from .forms import SignupForm, LoginForm, ProfileForm, UpdatePasswordForm, UpdateInfoForm
-from .forms import IndividualFundingForm, GroupFundingForm, TransferForm, LinkAccountForm
-from .forms import LinkAccountSynapse, ExpenseForm, UpdateExpenseForm, UpdatePrivacyForm
+from .forms import TransferForm, LinkAccountForm, LinkAccountSynapse, ExpenseForm
+from .forms import UpdateExpenseEvenForm, UpdateExpenseIndividualForm, UpdatePrivacyForm
 
 import dwollav2
 from synapse_pay_rest import Client, Node, Transaction
@@ -125,6 +125,48 @@ def signup(request):
         }
         return render(request, 'tabs/signup.html', parameters)
 
+# The following is the method that will display and process the users login page
+def loginPage(request):
+    # the following will check to see if the form is submitted or not.
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        # the following validates the form and will store the cleaned data that the
+        # user submitted.
+        if form.is_valid():
+            cd = form.cleaned_data
+            username = cd['username']
+            password = cd['password']
+            # the following line will authenticate the user based on the username
+            # and password that was submiited.
+            user = authenticate(username=username, password=password)
+            # if the user ;is authentic, the username will be stored in the session
+            # and redirect the user to their home page.
+            if user:
+                request.session['username'] = username
+                profiles = Profile.objects.all()
+                for profile in profiles:
+                    if profile.user.username == user.username:
+                        return redirect('user_groups')
+            else:
+                # if the user is not authentic, a error message will be displayed
+                # and the user will have to re login
+                message = 'invalid login info'
+                parameters = {
+                    'message':message,
+                    'form':form,
+                }
+            return render(request, 'tabs/login.html', parameters)
+    else:
+        # this will display the login form if it was not submitted initially
+        form = LoginForm()
+        message = 'Login Below'
+        parameters = {
+            'form':form,
+            'message':message,
+        }
+        return render(request, 'tabs/login.html', parameters)
+
+
 # this is a page that the user is redirected to once they register or choose to update
 # through the main page. This is where the user will create their profile by providing
 # specified informaiton.
@@ -160,18 +202,16 @@ def profileSetup(request):
                     phone = phone,
                     privacy = privacy,
                 )
-                # description = 'Congratulation' + currentUse.username + ' on setting up your Yap account'
-                # profile_setup_act = Acitivty.objects.create(
-                #     user = currentUser,
-                #     description = description,
-                #     status = 1,
-                #     category = 1,
-                #     group_ref = 1,
-                # )
-                # createUserDwolla(request, ssn)
-                # searchUserDwolla(request)
-                createUserSynapse(request)
-                return redirect('home_page')
+
+                # the follownig is gong to be the activity for setting up a profile_setup
+                description = 'Welcome ' + currentUser.username + ', you have created your new Yap profile'
+                profile_activity = UserActivity.objects.create(
+                    user = currentUser,
+                    description = description,
+                    status = 1
+                )
+
+                return redirect('user_groups')
         else:
             # this is what is going to be saved into the html file and used to
             # render the file
@@ -184,241 +224,60 @@ def profileSetup(request):
             }
             return render(request, 'tabs/profile_setup.html', parameters)
 
-# The following is the method that will display and process the users login page
-def loginPage(request):
-    # the following will check to see if the form is submitted or not.
-    if request.method == 'POST':
-        form = LoginForm(request.POST)
-        # the following validates the form and will store the cleaned data that the
-        # user submitted.
-        if form.is_valid():
-            cd = form.cleaned_data
-            username = cd['username']
-            password = cd['password']
-            # the following line will authenticate the user based on the username
-            # and password that was submiited.
-            user = authenticate(username=username, password=password)
-            # if the user ;is authentic, the username will be stored in the session
-            # and redirect the user to their home page.
-            if user:
-                request.session['username'] = username
-                profiles = Profile.objects.all()
-                for profile in profiles:
-                    if profile.user.username == user.username:
-                        return redirect('home_page')
-            else:
-                # if the user is not authentic, a error message will be displayed
-                # and the user will have to re login
-                message = 'invalid login info'
-                parameters = {
-                    'message':message,
-                    'form':form,
-                }
-            return render(request, 'tabs/login.html', parameters)
-    else:
-        # this will display the login form if it was not submitted initially
-        form = LoginForm()
-        message = 'Login Below'
-        parameters = {
-            'form':form,
-            'message':message,
-        }
-        return render(request, 'tabs/login.html', parameters)
-
 # The following view is what will be used to display all of the groups and informaiton
 # for the logged in user including groups balances and friends
 # Passed in var:
 #   name = the name of the user that is logged in
 def userHome(request):
     currentUser = loggedInUser(request)
-    # searchUserDwolla(request)
-    # searchFundingSourcesDwolla(request)
-    # retreiveUserSynapse(request)
-    # listedLinkAccounts(request)
-    # createTransaction(request)
-    # this is used to grab all of the groups that the user is a part of
-    members = Member.objects.filter(user=currentUser).all()
-    # the following are what will be used ot get all of the user requests
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    activities = UserActivity.objects.filter(user = currentUser).all()
+    unseen_activity = UserActivity.objects.filter(user = currentUser).filter(status=1).filter(account=None).count()
+
     requester = Request.objects.filter(user = currentUser.username).all()
     requested = Request.objects.filter(requested = currentUser).all()
-    # the following are what will be used to grab all of your firends
+
+    requests = requester | requested
+
     friender = Friend.objects.filter(user = currentUser.username).all()
     friended = Friend.objects.filter(friend = currentUser).all()
-    # this is used to actually display the group info that the user is a part of
-    groups = Group.objects.all()
-    # userBalances is passed through to teh html file and displayed there.
-    # totals is what will  be used to calculate the current balance based on all
-    # of the different balance records
-    userBalances = UserBalance.objects.filter(user = currentUser).all()
-    totals = UserBalance.objects.filter(user = currentUser).all()
-    # the following is going to pull the list of all the activty related to
-    # the logged in user
-    activities = Activity.objects.filter(user = currentUser).order_by('-created').all()
-    activity_count = Activity.objects.filter(user = currentUser).filter(status=1).count()
 
-    activity_summary = Activity.objects.filter(user = currentUser).order_by('-created').all()[:10]
+    friends = friender | friended
 
-    transfers = Transfers.objects.filter(user = currentUser).all()
+    parameters = {
+        'currentUser':currentUser,
+        'activities':activities,
+        'unseen_activity':unseen_activity,
+        'requests':requests,
+        'friends':friends
+    }
 
-    profiles = Profile.objects.all()
-    for profile in profiles:
-        if profile.user == currentUser:
-            profile = profile
-
-    # the following will initiate the starting amount as zero so that the
-    # calculation is not based on previously stored number
-    total_amount = 0
-    # the following will grab every balance objects that was filtered and if
-    # the transfer is set as 1 which is a trasfer from opentab account to PayPal
-    # account, the number will be subtracted from the total.
-    # if the transfer is set to 2 which indicateds that there is money sent from
-    # the paypal account to the opentab account, it will be added to the users
-    # current balance
-    for total in totals:
-        if total.transfer == 1:
-            total_amount = total_amount - total.amount
-        if total.transfer == 2:
-            total_amount = total_amount + total.amount
-    # the following post request is what will process the searched portion of
-    # the home page.
-    if request.method == "POST":
-        for searched in request.POST:
-            # the following stores the name that was seached in the search box
-            searched = request.POST['searched']
-            # the following will create an object with all of the users
-            users = User.objects.all()
-            # the following will go thorugh each user in the database.
-            for user in users:
-                # the following if statement will check to see if the name
-                # that was searched exists in the database.
-                if searched == user.username:
-                    # if the name exists in the database, the user will be stored
-                    # in the searchedUser variable and passed to the html page
-                    # and displayed for the user.
-                    searchedUser = user
-                    message = 'results for: ' + user.username
-                    parameters = {
-                        'currentUser':currentUser,
-                        'members':members,
-                        'groups':groups,
-                        'searchedUser':searchedUser,
-                        'message':message,
-                        'requester':requester,
-                        'requested':requested,
-                        'friender':friender,
-                        'friended':friended,
-                        'userBalances':userBalances,
-                        'total_amount':total_amount,
-                        'activities':activities,
-                        'transfers':transfers,
-                        'profile':profile,
-                        'activity_count':activity_count,
-                        'activity_summary':activity_summary,
-                    }
-                    return render(request, 'tabs/user_home.html', parameters)
-                else:
-                    # if the user does not exist in the database, an erorr message
-                    # with show up to let the loged in user that there is no one
-                    # with the entered username
-                    message = 'the user does not exist'
-                    parameters = {
-                        'currentUser':currentUser,
-                        'members':members,
-                        'groups':groups,
-                        'message':message,
-                        'requester':requester,
-                        'requested':requested,
-                        'friender':friender,
-                        'friended':friended,
-                        'userBalances':userBalances,
-                        'total_amount':total_amount,
-                        'activities':activities,
-                        'trasfers':transfers,
-                        'profile':profile,
-                        'activity_count':activity_count,
-                        'activity_summary':activity_summary,
-                    }
-            return render(request, 'tabs/user_home.html', parameters)
-    else:
-        # the following will display all relavent inforomation excluding the
-        # search results.
-        parameters = {
-            'currentUser':currentUser,
-            'members':members,
-            'groups':groups,
-            'requester':requester,
-            'requested':requested,
-            'friender':friender,
-            'friended':friended,
-            'userBalances':userBalances,
-            'total_amount':total_amount,
-            'activities':activities,
-            'transfers':transfers,
-            'profile':profile,
-            'activity_count':activity_count,
-            'activity_summary':activity_summary,
-        }
-        return render(request, 'tabs/user_home.html', parameters)
+    return render(request, 'tabs/user_home.html', parameters)
 
 def userGroups(request):
     currentUser = loggedInUser(request)
     currentProfile = Profile.objects.get(user = currentUser)
+
     members = Member.objects.filter(user = currentUser).all()
-    activity_count = Activity.objects.filter(user = currentUser).filter(status=1).count()
+
     if request.method == "POST":
         cheese = 'hello'
     else:
         parameters = {
             'currentUser':currentUser,
             'members':members,
-            'activity_count':activity_count,
         }
-        return render(request, 'tabs/groups.html', parameters)
+        return render(request, 'tabs/user_groups.html', parameters)
 
-def userActivity(request):
+def userAccounts(request):
     currentUser = loggedInUser(request)
     currentProfile = Profile.objects.get(user = currentUser)
-    activities = Activity.objects.filter(user = currentUser).order_by('-created').all()
-    activity_count = Activity.objects.filter(user = currentUser).filter(status=1).count()
-    if request.method == "POST":
-        cheese = 'hello'
-    else:
-        parameters = {
-            'currentUser':currentUser,
-            'activities':activities,
-            'activity_count':activity_count,
-        }
-        return render(request, 'tabs/activity.html', parameters)
-
-
-def userProfile(request, userName):
-    currentUser = loggedInUser(request)
-    currentProfile = Profile.objects.get(user = currentUser)
-
-    users = User.objects.all()
-    for user in users:
-        if user.username == userName:
-            viewedUser = user
-
-    profiles = Profile.objects.all()
-    for profile in profiles:
-        if profile.user.username == userName:
-            viewedProfile = profile
-
-    public = viewedProfile.privacy
-
-    if public == 1:
-        activity = Activity.objects.filter(user = viewedUser).all()
 
     parameters = {
-        'currentUser':currentUser,
-        'currentProfile':currentProfile,
-        'viewedUser':viewedUser,
-        'viewedProfile':viewedProfile,
-        'activity':activity
+        'currentUser':currentUser
     }
-
-    return render(request, 'tabs/user_profile.html', parameters)
+    return render(request, 'tabs/user_accounts.html', parameters)
 
 def userSettings(request):
     currentUser = loggedInUser(request)
@@ -452,6 +311,15 @@ def userSettings(request):
                 update_profile.bio = bio
                 update_profile.save()
                 updateSessionUsername(request, update_user.username)
+
+                # new activity for updating your profile
+                description = 'You have updated your user profile'
+                user_profile_update = UserActivity.objects.create(
+                    user = currentUser,
+                    description = description,
+                    status = 1
+                )
+
                 return redirect('home_page')
         if 'passwordSubmit' in request.POST:
             updatePassword = UpdatePasswordForm(request.POST)
@@ -467,6 +335,16 @@ def userSettings(request):
                         update_user = currentUser
                         update_user.password = secured_password
                         update_user.save()
+
+                        # new activity for updating your profile
+                        description = 'You have updated your password'
+                        user_profile_update = UserActivity.objects.create(
+                            user = currentUser,
+                            description = description,
+                            status = 1
+                        )
+
+                        return redirect('home_page')
                     else:
                         passwordMessage = 'The two passwords do not match'
                         # if the passwords do no match
@@ -491,6 +369,15 @@ def userSettings(request):
                 update_profile.state = state
                 update_profile.zip_code = zip_code
                 update_profile.save()
+
+                # new activity for updating your profile
+                description = 'You have updated your profile info'
+                user_profile_update = UserActivity.objects.create(
+                    user = currentUser,
+                    description = description,
+                    status = 1
+                )
+
                 return redirect('home_page')
         if 'privacySubmit' in request.POST:
             updatePrivacy = UpdatePrivacyForm(request.POST)
@@ -506,6 +393,15 @@ def userSettings(request):
                 update_privacy.expenses = expenses
                 update_privacy.searchable = searchable
                 update_privacy.save()
+
+                # new activity for updating your profile
+                description = 'You have updated your privacy settings'
+                user_profile_update = UserActivity.objects.create(
+                    user = currentUser,
+                    description = description,
+                    status = 1
+                )
+
                 return redirect('home_page')
     userSettingOne = UserSettingsForm(instance=currentUser)
     userSettingTwo = UserSettingsTwoForm(instance=currentProfile)
@@ -526,6 +422,52 @@ def userSettings(request):
     }
     return render(request, 'tabs/user_settings.html', parameters)
 
+def searchedUser(request):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+    users = User.objects.all()
+
+    if request.method == 'POST':
+        searched = request.POST['searched']
+
+        for user in users:
+            if user.username == searched:
+                searchedUser = user
+                return redirect('user_profile', userName = searchedUser.username)
+        return redirect('user_groups')
+
+
+def userProfile(request, userName):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    viewedUser = None
+    viewedProfile = None
+
+    users = User.objects.all()
+    for user in users:
+        if user.username == userName:
+            viewedUser = user
+            viewedProfile = Profile.objects.get(user = viewedUser)
+
+    if viewedUser != None:
+        friends = Friend.objects.filter(Q(user = currentUser.username, friend = viewedUser) | Q(user = viewedUser.username, friend = currentUser))
+
+    if friends:
+        print('friends')
+    else:
+        friends = None
+        print('not friends')
+
+    parameters = {
+        'currentUser':currentUser,
+        'currentProfile':currentProfile,
+        'viewedUser':viewedUser,
+        'viewedProfile':viewedProfile,
+        'friends':friends
+    }
+    return render(request, 'tabs/user_profile.html', parameters)
+
 # the following method managed the sending of friend requests to other users and
 # storing a record of that in the database.
 def sendRequest(request, requested):
@@ -539,6 +481,13 @@ def sendRequest(request, requested):
         requested = requestedUser,
     )
 
+    description = currentUser.username + ' has send you a friend request'
+    request_activity = UserActivity.objects.create(
+        user = requestedUser,
+        description = description,
+        status = 1,
+    )
+
     return redirect('home_page')
 
 # The following method will process the acceptaance of a friend request.
@@ -550,8 +499,21 @@ def acceptRequest(request, accepted):
     new_friend = Friend.objects.create(
         user = currentUser,
         friend = acceptedUser,
-        category = 1,
-        status = 1,
+        category = 1
+    )
+
+    accepted_description = 'You and ' + acceptedUser.username + ' are now friends'
+    friend_description = 'You and ' + currentUser.username + ' are now friends'
+    accepted_activity = UserActivity.objects.create(
+        user = currentUser,
+        description = accepted_description,
+        status = 1
+    )
+
+    friend_activity = UserActivity.objects.create(
+        user = acceptedUser,
+        description = friend_description,
+        status = 1
     )
 
     # after the new friend record is created, the original request is found
@@ -592,6 +554,15 @@ def createGroup(request):
                 created_by = currentUser,
             )
 
+            user_description = 'You created a new group - ' + name
+
+            user_activity = UserActivity.objects.create(
+                user = currentUser,
+                description = user_description,
+                status = 1,
+            )
+
+
             # return redirect('home_page')
             return redirect('add_members', groupId=new_group.id)
             #return redirect('accounts')
@@ -625,21 +596,18 @@ def groupHome(request, groupId):
     for member in members:
         if member.status == 2:
             host = member
-            print(host.user.username)
+
+    activities = GroupActivity.objects.filter(group = currentGroup).all()
+
     expenses = Expense.objects.filter(group = group.group).all()
-    # the following is going to grab all of the balances for the members of the
-    # selected group.
-    balances = GroupBalance.objects.filter(group = group.group).all()
-    # the following is all of the activity related to the specified group
-    activities = Activity.objects.filter(group = currentGroup).all()
+
     parameters = {
         'members':members,
         'group':group,
         'currentUser':currentUser,
-        'balances':balances,
-        'activities':activities,
         'expenses':expenses,
         'host':host,
+        'activities':activities,
     }
     return render(request, 'tabs/group_home.html', parameters)
 
@@ -669,7 +637,11 @@ def addMembers(request, groupId):
             status = 2,
         )
 
-        print(default_member_activty.group.name)
+        default_description = currentUser.username + ' created ' + group.name
+        default_activity = GroupActivity.objects.create(
+            group = group,
+            description = default_description,
+        )
         # the following will scroll through every user in the users table
         for friend in friends:
             # it will then check to see if the usersname was returned in the request.
@@ -677,24 +649,55 @@ def addMembers(request, groupId):
             # be passed.
             if friend.user == currentUser.username:
                 selected_user = User.objects.get(username = friend.friend.username)
-                print(selected_user)
                 if selected_user.username in request.POST:
-                    print('added to group')
                     new_member = Member.objects.create(
                         user = selected_user,
                         group = group,
                         status = 1,
                     )
 
+                    friend_description = currentUser.username + ' added you to ' + group.name
+                    group_description = currentUser.username + ' added ' + selected_user.username + ' to ' + group.name
+
+                    group_member_activity = GroupActivity.objects.create(
+                        user = selected_user,
+                        group = group,
+                        description = group_description,
+                        general = 1
+                    )
+
+                    friend_member_activity = GroupActivity.objects.create(
+                        user = selected_user,
+                        group = group,
+                        description = friend_description,
+                        general = 2,
+                    )
+
             if friend.friend.username == currentUser.username:
                 selected_user = User.objects.get(username = friend.user)
                 print(selected_user)
                 if selected_user.username in request.POST:
-                    print('added to group')
                     new_member = Member.objects.create(
                         user = selected_user,
                         group = group,
                         status = 1,
+                    )
+
+                    friend_description = currentUser.username + ' added you to ' + group.name
+                    group_description = currentUser.username + ' added ' + selected_user.username + ' to ' + group.name
+
+                    group_member_activity = GroupActivity.objects.create(
+                        user = selected_user,
+                        group = group,
+                        description = group_description,
+                        general = 1
+                    )
+
+                    friend_member_activity = GroupActivity.objects.create(
+                        user = selected_user,
+                        group = group,
+                        description = friend_description,
+                        general = 2
                     )
 
                 # next three lines will keep track and updated the group count every time that
@@ -739,6 +742,12 @@ def selectHostMember(request, groupId, memberName):
     new_host.status = 2
     new_host.save()
 
+    group_description = selectedMember.user.username + ' is the new group host'
+    group_activity = GroupActivity.objects.create(
+        group = currentGroup,
+        description = group_description,
+    )
+
     return redirect('group_home', groupId = currentGroup.id)
 
 def addExpense(request, groupId):
@@ -752,6 +761,7 @@ def addExpense(request, groupId):
         if form.is_valid():
             cd = form.cleaned_data
             name = cd['name']
+            location = cd['location']
             split = cd['split']
             for member in members:
                 if member.user.username in request.POST:
@@ -759,8 +769,16 @@ def addExpense(request, groupId):
                         user = member.user,
                         group = currentGroup,
                         name = name,
+                        location = location,
                         split = split,
                     )
+            description = currentUser.username + ' added a new expense: ' + new_expense.name + ' - ' + new_expense.location
+            expense_activity = GroupActivity.objects.create(
+                group = currentGroup,
+                expense = new_expense,
+                description = description
+            )
+
         if split == 1:
             return redirect('update_expense_even', groupId = currentGroup.id, groupName = name)
         if split == 2:
@@ -784,11 +802,10 @@ def updateExpenseEven(request, groupId, groupName):
     expenses = Expense.objects.filter(group = currentGroup).filter(name = groupName).all()
     expenses_count = Expense.objects.filter(group = currentGroup).filter(name = groupName).count()
     if request.method == "POST":
-        form = UpdateExpenseForm(request.POST)
+        form = UpdateExpenseEvenForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
             amount = cd['amount']
-            description = cd['description']
             userAmount = SplitEven(expenses_count, amount)
             # the followig is going to update the expenses that were created with the
             # split amounts and description for the expense
@@ -796,14 +813,33 @@ def updateExpenseEven(request, groupId, groupName):
                 amount = expense.amount
                 update_expense = expense
                 update_expense.amount = userAmount
-                update_expense.description = description
                 update_expense.save()
 
+                if expense.user != currentUser:
+
+                    user_description = 'You owe ' + host.user.username + ' $' + str(userAmount) + ' for ' + expense.name
+                    user_activity = GroupActivity.objects.create(
+                        user = expense.user,
+                        group = currentGroup,
+                        expense = expense,
+                        description = user_description,
+                        general = 2,
+                    )
+
+
+                    group_description = expense.user.username + ' owes ' + host.user.username + ' $' + str(userAmount) + ' for ' + expense.name
+                    group_activity = GroupActivity.objects.create(
+                        user = expense.user,
+                        group = currentGroup,
+                        expense = expense,
+                        description = group_description,
+                        general = 1,
+                    )
                 # if expense.user != host.user:
             return redirect('group_home', groupId = currentGroup.id)
     else:
         message = 'Please complete form below'
-        form = UpdateExpenseForm()
+        form = UpdateExpenseEvenForm()
         parameters = {
             'message':message,
             'form':form,
@@ -819,7 +855,7 @@ def updateExpenseIndividual(request, groupId, groupName):
     host = Member.objects.filter(group = groupId).filter(status = 2).first()
     expenses = Expense.objects.filter(group = currentGroup).filter(name = groupName).all()
     expenses_count = Expense.objects.filter(group = currentGroup).filter(name = groupName).count()
-    SplitFormSet = formset_factory(UpdateExpenseForm, extra=expenses_count)
+    SplitFormSet = formset_factory(UpdateExpenseIndividualForm, extra=expenses_count)
     # form_user = zip(expenses, SplitFormSet)
     if request.method == 'POST':
         formSet = SplitFormSet(request.POST)
@@ -845,8 +881,27 @@ def updateExpenseIndividual(request, groupId, groupName):
                 update_expense.save()
                 # if expense.user != host.user:
 
+                user_description = 'You owe ' + host.user.username + ' $' + str(total_amount) + ' for ' + description
+                group_description = expense.user.username + ' owe ' + host.user.username + ' $' + str(total_amount) + ' for ' + description
+
+                user_activity = GroupActivity.objects.create(
+                    user = expense.user,
+                    group = currentGroup,
+                    expense = expense,
+                    description = user_description,
+                    general = 2
+                )
+
+                group_activity = GroupActivity.objects.create(
+                    user = expense.user,
+                    group = currentGroup,
+                    expense = expense,
+                    description = group_description,
+                    general = 1
+                )
+
                 count = count + 1
-            return redirect('group_home', groupId = currentGroup.id)
+        return redirect('group_home', groupId = currentGroup.id)
     else:
         form = SplitFormSet()
         message = 'Please complete the form below'
@@ -879,6 +934,22 @@ def verifyExpense(request, expenseId, activityId):
     delete_second = secondActivity
     delete_second.delete()
 
+    user_description = 'You transfered $' + expense.amount + ' to ' + host.username + ' for ' + expense.description
+    group_description = currentUser.username + ' transfered $' + expense.amount + ' to ' + host.username + ' for ' + expense.description
+
+    user_activity = GroupActivity.objects.create(
+        user = currentUser,
+        group = expense.group,
+        expense = expense,
+        description = user_description
+    )
+
+    group_description = GroupActivity.objects.create(
+        group = expense.group,
+        expense = expense,
+        description = group_description
+    )
+
     return redirect('home_page')
 
 # the following is what will take care of the logout portion of the project
@@ -900,13 +971,13 @@ def clearAllActivities(request):
     currentUser = loggedInUser(request)
     currentProfile = Profile.objects.get(user = currentUser)
 
-    activities = Activity.objects.filter(user = currentUser).all()
+    activities = UserActivity.objects.filter(user = currentUser).all()
 
     for activity in activities:
         update_activity = activity
         update_activity.status = 2
         update_activity.save()
-    return redirect('home_page')
+    return redirect('user_home')
 
 # the following is in charge of spliting an amount by number of people.
 def SplitEven(count, amount):
