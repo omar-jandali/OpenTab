@@ -210,7 +210,7 @@ def profileSetup(request):
                     description = description,
                     status = 1
                 )
-
+                createUserSynapse(request)
                 return redirect('user_groups')
         else:
             # this is what is going to be saved into the html file and used to
@@ -254,6 +254,19 @@ def userHome(request):
     }
 
     return render(request, 'tabs/user_home.html', parameters)
+
+def userExpenses(request):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    activities = UserActivity.objects.filter(user = currentUser).all()
+
+    parameters = {
+        'currentUser':currentUser,
+        'activities':activities,
+    }
+
+    return render(request, 'tabs/user_expenses.html', parameters)
 
 def userGroups(request):
     currentUser = loggedInUser(request)
@@ -476,18 +489,18 @@ def sendRequest(request, requested):
     # for the friend request.
     requestedUser = User.objects.get(username = requested)
     # the following created a new record in the request table within the database.
-    new_request = Request.objects.create(
-        user = currentUser,
-        requested = requestedUser,
-    )
+    if requestedUser:
+        new_request = Request.objects.create(
+            user = currentUser,
+            requested = requestedUser,
+        )
 
-    description = currentUser.username + ' has send you a friend request'
-    request_activity = UserActivity.objects.create(
-        user = requestedUser,
-        description = description,
-        status = 1,
-    )
-
+        description = currentUser.username + ' has send you a friend request'
+        request_activity = UserActivity.objects.create(
+            user = requestedUser,
+            description = description,
+            status = 1,
+        )
     return redirect('home_page')
 
 # The following method will process the acceptaance of a friend request.
@@ -604,6 +617,7 @@ def groupHome(request, groupId):
     parameters = {
         'members':members,
         'group':group,
+        'currentGroup':currentGroup,
         'currentUser':currentUser,
         'expenses':expenses,
         'host':host,
@@ -772,7 +786,7 @@ def addExpense(request, groupId):
                         location = location,
                         split = split,
                     )
-            description = currentUser.username + ' added a new expense: ' + new_expense.name + ' - ' + new_expense.location
+            description = 'New expense: ' + new_expense.name + ' - ' + new_expense.location
             expense_activity = GroupActivity.objects.create(
                 group = currentGroup,
                 expense = new_expense,
@@ -824,6 +838,8 @@ def updateExpenseEven(request, groupId, groupName):
                         expense = expense,
                         description = user_description,
                         general = 2,
+                        validation = 2,
+                        host = currentUser.username,
                     )
 
 
@@ -834,6 +850,8 @@ def updateExpenseEven(request, groupId, groupName):
                         expense = expense,
                         description = group_description,
                         general = 1,
+                        validation = 2,
+                        host = currentUser.username
                     )
                 # if expense.user != host.user:
             return redirect('group_home', groupId = currentGroup.id)
@@ -889,7 +907,8 @@ def updateExpenseIndividual(request, groupId, groupName):
                     group = currentGroup,
                     expense = expense,
                     description = user_description,
-                    general = 2
+                    general = 2,
+                    validation = 2,
                 )
 
                 group_activity = GroupActivity.objects.create(
@@ -897,7 +916,8 @@ def updateExpenseIndividual(request, groupId, groupName):
                     group = currentGroup,
                     expense = expense,
                     description = group_description,
-                    general = 1
+                    general = 1,
+                    validation = 2,
                 )
 
                 count = count + 1
@@ -914,43 +934,217 @@ def updateExpenseIndividual(request, groupId, groupName):
         }
         return render(request, 'tabs/update_expense_individual.html', parameters)
 
+def addExpenseSingle(request):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    friender = Friend.objects.filter(user = currentUser.username).all()
+    friended = Friend.objects.filter(friend = currentUser).all()
+
+    friends = friender | friended
+
+    if request.method == 'POST':
+        form = ExpenseForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            name = cd['name']
+            location = cd['location']
+            split = cd['split']
+            reference = generateReferenceNumber()
+            new_expense = Expense.objects.create(
+                user = currentUser,
+                name = name,
+                location = location,
+                split = split,
+                reference = reference,
+                created_by = currentUser.username,
+            )
+            description = 'You created a new expense: ' + new_expense.name + ' - ' + new_expense.location
+            expense_activity = UserActivity.objects.create(
+                user = currentUser,
+                expense = new_expense,
+                description = description,
+                reference = reference,
+            )
+            for friend in friends:
+                if friend.user == currentUser.username:
+                    if friend.friend.username in request.POST:
+                        new_expense = Expense.objects.create(
+                             user = friend.friend,
+                             name = name,
+                             location = location,
+                             split = split,
+                             reference = reference,
+                             created_by = currentUser.username,
+                        )
+                if friend.friend == currentUser:
+                    if friend.user in request.POST:
+                        friend = User.objects.get(username = friend.user)
+                        new_expense = Expense.objects.create(
+                             user = friend,
+                             name = name,
+                             location = location,
+                             split = split,
+                             reference = reference,
+                             created_by = currentUser.username,
+                        )
+                description = currentUser.username + ' created a new expense: ' + new_expense.name + ' - ' + new_expense.location
+                expense_activity = UserActivity.objects.create(
+                    user = new_expense.user,
+                    expense = new_expense,
+                    description = description,
+                    accepted = 1,
+                    reference = reference
+                )
+        if split == 1:
+            return redirect('update_expense_even_single', reference = reference)
+        if split == 2:
+            return redirect('update_expense_individual_single', reference = reference)
+
+    else:
+        form = ExpenseForm()
+        message = 'Please fill out the form'
+        parameters = {
+            'form':form,
+            'message':message,
+            'friends':friends,
+            'currentUser':currentUser,
+        }
+        return render(request, 'tabs/single_expense.html', parameters)
+
+def updateExpenseEvenSingle(request, reference):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    expenses = Expense.objects.filter(reference = reference).all()
+    expenses_count = Expense.objects.filter(reference = reference).count()
+    host = currentUser
+    if request.method == 'POST':
+        form = UpdateExpenseEvenForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            amount = cd['amount']
+            userAmount = SplitEven(expenses_count, amount)
+            for expense in expenses:
+                amount = expense.amount
+                update_expense = expense
+                update_expense.amount = userAmount
+                update_expense.save()
+                if expense.user != currentUser:
+                    user_decription = 'You owe ' + host.username + ' $' + str(userAmount) + ' for ' + expense.name
+                    user_activity = UserActivity.objects.create(
+                        user = expense.user,
+                        expense = expense,
+                        description = user_decription,
+                        accepted = 1,
+                        status = 1,
+                        reference = reference,
+                        validation = 2,
+                    )
+            return redirect('user_expenses')
+    else:
+        message = 'Please complete the form '
+        form = UpdateExpenseEvenForm()
+        parameters = {
+            'message':message,
+            'form':form,
+            'expenses':expenses,
+        }
+        return render(request, 'tabs/update_expense_even.html', parameters)
+
+def updateExpenseIndividualSingle(request, reference):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    expenses = Expense.objects.filter(reference = reference)
+    expenses_count = Expense.objects.filter(reference = reference).count()
+    host = currentUser
+    SplitFormSet = formset_factory(UpdateExpenseIndividualForm, extra=expenses_count)
+    if request.method == 'POST':
+        formSet = SplitFormSet(request.POST)
+        if 'tax' in request.POST:
+            tax = request.POST['tax']
+            amount = Decimal(tax)
+            individual_tax = SplitEven(expenses_count, amount)
+        if 'tip' in request.POST:
+            tip = request.POST['tip']
+            amount = Decimal(tip)
+            individual_tip = SplitEven(expenses_count, amount)
+        if formSet.is_valid():
+            count = 0
+            for form in formSet:
+                if form.is_valid:
+                    cd = form.cleaned_data
+                    amount = cd['amount']
+                    description = cd['description']
+                    total_amount = amount + individual_tip + individual_tax
+                    expense = expenses[count]
+                    if expense.user != currentUser:
+                        update_expense = expense
+                        update_expense.amount = total_amount
+                        update_expense.description = description
+                        update_expense.save()
+                        user_description = 'You owe ' + host.username + ' $' + str(total_amount) + ' for ' + expense.name + ' - ' + description
+                        user_activity = UserActivity.objects.create(
+                            user = expense.user,
+                            expense = expense,
+                            description = user_description,
+                            accepted = 1,
+                            status = 1,
+                            reference = reference,
+                            validation = 2,
+                        )
+                count = count + 1
+            return redirect('user_expenses')
+    else:
+        form = SplitFormSet()
+        message = 'Please complete the form below'
+        parameters = {
+            'message':message,
+            'form':form,
+            'expenses':expenses,
+            # 'form_user':form_user,
+        }
+        return render(request, 'tabs/update_expense_individual.html', parameters)
+
 def verifyExpense(request, expenseId, activityId):
     currentUser = loggedInUser(request)
     currentProfile = Profile.objects.get(user = currentUser)
 
-    expense = Expense.objects.get(id = expenseId)
-    currentActivity = Activity.objects.get(id = activityId)
-    secondId = currentActivity.id + 1
-    secondActivity = Activity.objects.get(id = secondId)
+    currentExpense = Expense.objects.get(id = expenseId)
+    currentExpense.status = 2
+    currentExpense.save()
 
-    host = User.objects.get(username = currentActivity.reference)
-    print(expense.name)
-    update_expense = expense
-    update_expense.status = 2
-    update_expense.save()
+    currentActivity = GroupActivity.objects.get(id = activityId)
+    activity_number = currentActivity.id + 1
+    secondActivity = GroupActivity.objects.get(id = activity_number)
 
-    delete_activity = currentActivity
-    delete_activity.delete()
-    delete_second = secondActivity
-    delete_second.delete()
+    host = currentActivity.host
 
-    user_description = 'You transfered $' + expense.amount + ' to ' + host.username + ' for ' + expense.description
-    group_description = currentUser.username + ' transfered $' + expense.amount + ' to ' + host.username + ' for ' + expense.description
+    user_description = 'You transfered $' + str(currentExpense.amount) + ' to ' + host + ' for ' + currentExpense.description
+    group_description = currentUser.username + ' transfered $' + str(currentExpense.amount) + ' to ' + host + ' for ' + currentExpense.description
 
     user_activity = GroupActivity.objects.create(
         user = currentUser,
-        group = expense.group,
-        expense = expense,
-        description = user_description
+        group = currentExpense.group,
+        expense = currentExpense,
+        description = user_description,
+        general = 2
     )
 
     group_description = GroupActivity.objects.create(
-        group = expense.group,
-        expense = expense,
-        description = group_description
+        user = currentUser,
+        group = currentExpense.group,
+        expense = currentExpense,
+        description = group_description,
+        general = 1
     )
 
-    return redirect('home_page')
+    currentActivity.delete()
+    secondActivity.delete()
+
+    group_id = currentExpense.group.id
+    return redirect('group_home', group_id)
 
 # the following is what will take care of the logout portion of the project
 # this comment is to test and make sure that the new gitlab remote is working
@@ -1027,6 +1221,13 @@ def setPrivacy(request):
         )
 
     return new_privacy
+
+def templateTesting(request):
+    cheese = 'cheese'
+    parameters = {
+        'cheese':cheese,
+    }
+    return render(reqest, 'tabs/template_testing.html', parameters)
 
 #--------------------------------------------------------------------------------
 # the following is going to stay last because it is just used to view all records,
@@ -1555,7 +1756,13 @@ def listedLinkAccounts(request):
         print (node)
         print (type(node))
 
-    return nodes
+    parameters = {
+        'currentUser':currentUser,
+        'user_id':user_id,
+        'nodes':nodes,
+    }
+
+    return render(request, 'tabs/linked_accounts_synapse.html', parameters)
 
 def createTransaction(request):
     currentUser = loggedInUser(request)

@@ -3,8 +3,9 @@
 {% block content %}
   <h2 class="page-header">{{ currentUser.username }} - Accounts</h2>
   <div>
-    <p><a href="">Link Account (login)</a></p>
+    <p><a href="{% url 'login_synapse' %}">Link Account (login)</a></p>
     <p><a href="">Link Account (AN/RN)</a></p>
+    <p><a href="{% url 'linked_synapse' %}">check linked accounts</a></p>
   </div>
 
 {% endblock %}

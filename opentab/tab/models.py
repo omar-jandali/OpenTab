@@ -35,13 +35,15 @@ class Member(models.Model):
 
 class Expense(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=9, default=0)
     description = models.CharField(max_length=200, default = 'expense')
     name = models.CharField(max_length=100, default = 'group name')
     location = models.CharField(max_length=100, default = 'location')
     status = models.SmallIntegerField(default = 1)
     split = models.SmallIntegerField(default = 1)
+    reference = models.IntegerField(default = '101', null = True)
+    created_by = models.CharField(max_length = 200, default = 'username', null=True)
     created = models.DateTimeField(auto_now_add=True)
 
 class Profile(models.Model):
@@ -65,19 +67,26 @@ class Profile(models.Model):
 class UserActivity(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     account = models.CharField(max_length=150, null=True)
+    expense = models.ForeignKey(Expense, null=True, on_delete=models.CASCADE)
     description = models.CharField(max_length=200, default='some action')
+    accepted = models.SmallIntegerField(default = 1)
     # 1 = unseen 2 = seen
     status = models.SmallIntegerField(default=1)
+    reference = models.IntegerField(default = '101', null = True)
+    validation = models.SmallIntegerField(default = 1)
     created = models.DateTimeField(auto_now_add=True)
 
 class GroupActivity(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    host = models.CharField(max_length=100, null=True)
     expense = models.ForeignKey(Expense, null=True, on_delete=models.CASCADE)
     description = models.CharField(max_length=200, default='some action')
     # the following will allow the group to know if it is a general group activity
     # or if there is a user specificied
     general = models.SmallIntegerField(default = 1)
+    validation = models.SmallIntegerField(default = 1)
+    accepted = models.SmallIntegerField(default = 1)
     created = models.DateTimeField(auto_now_add=True)
 
 

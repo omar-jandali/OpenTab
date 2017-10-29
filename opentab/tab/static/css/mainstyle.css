@@ -20,9 +20,22 @@
   align-items: center;
 }
 
+.align-right-item {
+  text-align: right;
+  align-items: right;
+}
+
+.align-margin-right {
+  margin-right: 15px;
+}
+
+.align-margin-left {
+  margin-left: 10px;
+}
+
 .align-center-v {
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding-top: 16px;
+  padding-bottom: 16px;
 }
 
 .solid-borders {
@@ -52,4 +65,33 @@
 
 .page-header {
   margin-top: 10px;
+}
+
+.scrollable-view-full {
+  width: 100% !important;
+  margin-top: 10px !important;
+  margin-bottom: 10px !important;
+  max-height: 84vh !important;
+  overflow-y: scroll !important;
+}
+
+.scrollable-view-host {
+  width: 100% !important;
+  margin-top: 14px !important;
+  margin-bottom: 10px !important;
+  max-height: 80vh !important;
+  overflow-y: scroll !important;
+}
+
+.scrollable-view-expenses {
+  width: 100% !important;
+  margin-top: 14px !important;
+  margin-bottom: 10px !important;
+  max-height: 79vh !important;
+  overflow-y: scroll !important;
+}
+
+.content-max-height {
+  height: 90vh !important;
+  overflow-y: hidden !important;
 }
