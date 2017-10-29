@@ -16,7 +16,12 @@
         {% if activity.validation == 2 %}
           <p class="align-right-item align-margin-right">
             {{ activity.description }} - {{ activity.expense.name }} -
-            <a href="">Y</a>
+            <a href="{% url 'verify_expense_single' activity.id %}">Y</a>
+          </p>
+        {% endif %}
+        {% if activity.validation == 3 %}
+          <p class="align-right-item align-margin-right">
+            {{ activity.description }}
           </p>
         {% endif %}
       {% endfor %}

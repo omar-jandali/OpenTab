@@ -934,6 +934,45 @@ def updateExpenseIndividual(request, groupId, groupName):
         }
         return render(request, 'tabs/update_expense_individual.html', parameters)
 
+def verifyExpense(request, expenseId, activityId):
+    currentUser = loggedInUser(request)
+    currentProfile = Profile.objects.get(user = currentUser)
+
+    currentExpense = Expense.objects.get(id = expenseId)
+    currentExpense.status = 2
+    currentExpense.save()
+
+    currentActivity = GroupActivity.objects.get(id = activityId)
+    activity_number = currentActivity.id + 1
+    secondActivity = GroupActivity.objects.get(id = activity_number)
+
+    host = currentActivity.host
+
+    user_description = 'You transfered $' + str(currentExpense.amount) + ' to ' + host + ' for ' + currentExpense.description
+    group_description = currentUser.username + ' transfered $' + str(currentExpense.amount) + ' to ' + host + ' for ' + currentExpense.description
+
+    user_activity = GroupActivity.objects.create(
+        user = currentUser,
+        group = currentExpense.group,
+        expense = currentExpense,
+        description = user_description,
+        general = 2
+    )
+
+    group_description = GroupActivity.objects.create(
+        user = currentUser,
+        group = currentExpense.group,
+        expense = currentExpense,
+        description = group_description,
+        general = 1
+    )
+
+    currentActivity.delete()
+    secondActivity.delete()
+
+    group_id = currentExpense.group.id
+    return redirect('group_home', group_id)
+
 def addExpenseSingle(request):
     currentUser = loggedInUser(request)
     currentProfile = Profile.objects.get(user = currentUser)
@@ -965,6 +1004,7 @@ def addExpenseSingle(request):
                 expense = new_expense,
                 description = description,
                 reference = reference,
+                validation = 1,
             )
             for friend in friends:
                 if friend.user == currentUser.username:
@@ -994,7 +1034,8 @@ def addExpenseSingle(request):
                     expense = new_expense,
                     description = description,
                     accepted = 1,
-                    reference = reference
+                    reference = reference,
+                    validation = 1
                 )
         if split == 1:
             return redirect('update_expense_even_single', reference = reference)
@@ -1040,6 +1081,16 @@ def updateExpenseEvenSingle(request, reference):
                         status = 1,
                         reference = reference,
                         validation = 2,
+                    )
+                    host_description = expense.user.username + ' owes you $' + str(userAmount) + ' for ' + expense.name
+                    host_activity = UserActivity.objects.create(
+                        user = host,
+                        expense = expense,
+                        description = host_description,
+                        accepted = 1,
+                        status = 1,
+                        reference = reference,
+                        validation = 1,
                     )
             return redirect('user_expenses')
     else:
@@ -1094,6 +1145,16 @@ def updateExpenseIndividualSingle(request, reference):
                             reference = reference,
                             validation = 2,
                         )
+                        host_description = expense.user.username + ' owes you $' + str(userAmount) + ' for ' + expense.name + ' - ' + description
+                        host_activity = UserActivity.objects.create(
+                            user = currentUser,
+                            expense = expense,
+                            description = host_decription,
+                            accepted = 1,
+                            status = 1,
+                            reference = reference,
+                            validation = 1,
+                        )
                 count = count + 1
             return redirect('user_expenses')
     else:
@@ -1107,44 +1168,32 @@ def updateExpenseIndividualSingle(request, reference):
         }
         return render(request, 'tabs/update_expense_individual.html', parameters)
 
-def verifyExpense(request, expenseId, activityId):
+def verifyExpenseSingle(request, activityId):
     currentUser = loggedInUser(request)
-    currentProfile = Profile.objects.get(user = currentUser)
 
-    currentExpense = Expense.objects.get(id = expenseId)
-    currentExpense.status = 2
-    currentExpense.save()
+    currentActivity = UserActivity.objects.get(id = activityId)
 
-    currentActivity = GroupActivity.objects.get(id = activityId)
-    activity_number = currentActivity.id + 1
-    secondActivity = GroupActivity.objects.get(id = activity_number)
+    currentExpense = currentActivity.expense
+    host = currentActivity.expense.created_by
 
-    host = currentActivity.host
+    update_expense = currentExpense
+    update_expense.status = 2
+    update_expense.save()
 
-    user_description = 'You transfered $' + str(currentExpense.amount) + ' to ' + host + ' for ' + currentExpense.description
-    group_description = currentUser.username + ' transfered $' + str(currentExpense.amount) + ' to ' + host + ' for ' + currentExpense.description
-
-    user_activity = GroupActivity.objects.create(
+    description = 'You have transfered ' + str(currentExpense.amount) + ' to ' + host + ' for ' + currentExpense.name
+    new_activity = UserActivity.objects.create(
         user = currentUser,
-        group = currentExpense.group,
         expense = currentExpense,
-        description = user_description,
-        general = 2
-    )
-
-    group_description = GroupActivity.objects.create(
-        user = currentUser,
-        group = currentExpense.group,
-        expense = currentExpense,
-        description = group_description,
-        general = 1
+        description = description,
+        status = 2,
+        accepted = 2,
+        validation = 3,
+        reference = currentActivity.reference,
     )
 
     currentActivity.delete()
-    secondActivity.delete()
 
-    group_id = currentExpense.group.id
-    return redirect('group_home', group_id)
+    return redirect('user_expenses')
 
 # the following is what will take care of the logout portion of the project
 # this comment is to test and make sure that the new gitlab remote is working

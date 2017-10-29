@@ -48,6 +48,7 @@ urlpatterns = [
         views.updateExpenseIndividualSingle, name="update_expense_individual_single"),
     url(r'^group/(?P<groupId>[0-9]+)/$', views.groupHome, name='group_home'),
     url(r'^(?P<expenseId>[0-9]+)/(?P<activityId>[0-9]+)/verify_expense/$', views.verifyExpense, name='verify_expense'),
+    url(r'^(?P<activityId>[0-9]+)/verify_expense/$', views.verifyExpenseSingle, name='verify_expense_single'),
     url(r'^(?P<userName>[\w+]+)/$', views.userProfile, name='user_profile'),
     # the following is to just test the sypanse api
     # url(r'^create_user_synapse$', views.createUserSynapse, name='create_user_synapse')
